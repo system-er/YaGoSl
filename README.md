@@ -3,7 +3,7 @@ Yet another Godot Squirrel
 
 the advantages of YaGoSl are that _ready and _process functions work in squirrel. see the flying sprite on screen!    
 its a new script-language for godot. edit your nut-files with the editor of your choice    
-and type the name of the .nut-file in the godotsquirrel-class in inspector.    
+and type the name of the .nut-file in the godotsquirrel-node in inspector.    
 
 programmed with godot 4.5, squirrel 3.2. thx to Alberto Demichelis for squirrel.
 tested on windows 11.
