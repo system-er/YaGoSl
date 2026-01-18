@@ -1,0 +1,18 @@
+[configuration]
+
+entry_symbol = "godotsquirrel_library_init"
+compatibility_minimum = "4.1"
+reloadable = true
+
+[libraries]
+windows.debug.x86_64 = "res://bin/libgodotsquirrel.windows.template_debug.dll"
+windows.release.x86_64 = "res://bin/libgodotsquirrel.windows.template_release.dll"
+
+
+[dependencies]
+ios.debug = {
+    "res://bin/libgodot-cpp.ios.template_debug.xcframework": ""
+}
+ios.release = {
+    "res://bin/libgodot-cpp.ios.template_release.xcframework": ""
+}

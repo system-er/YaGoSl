@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://ctd63jcgoodum"]
+
+[ext_resource type="Script" uid="uid://bdbl3w6glgu2" path="res://godotsquirrel.gd" id="1_sy5k4"]
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource("1_sy5k4")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]

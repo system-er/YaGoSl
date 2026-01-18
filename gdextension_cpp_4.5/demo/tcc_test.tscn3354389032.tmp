@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://bty7yrrkcncd1"]
+
+[node name="tcc_test" type="Node2D"]
+
+[node name="GodotSquirrel" type="GodotSquirrel" parent="."]

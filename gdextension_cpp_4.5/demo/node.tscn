@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://ctd63jcgoodum"]
+
+[ext_resource type="Texture2D" uid="uid://ch0aljsxfwrd6" path="res://icon.svg" id="2_j2q8x"]
+
+[node name="Node2D" type="Node2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(18, 72)
+texture = ExtResource("2_j2q8x")
+centered = false
+
+[node name="GodotSquirrel" type="GodotSquirrel" parent="."]
+script_path = "res://test.nut"
