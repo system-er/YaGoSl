@@ -4,6 +4,7 @@ Yet another Godot Squirrel
 the advantages of YaGoSl are that _ready and _process functions work in squirrel. see the flying sprite on screen!
 
 programmed with godot 4.5, squirrel 3.2. thx to Alberto Demichelis for squirrel.
+tested on windows 11.
 
 commands working:    
 print(string)    
