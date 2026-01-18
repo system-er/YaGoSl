@@ -12,7 +12,7 @@ get_name(node.id)
 get_position(node.id)    
 set_name and set_position    
 
-example test.nut:    
+firstpic:    
 ![Pic1](firstpic.jpg)
 
 
