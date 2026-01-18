@@ -6,9 +6,10 @@ its a new script-language for godot. edit your nut-files with the editor of your
 and type the name of the .nut-file in the godotsquirrel-node in inspector.    
 
 programmed with godot 4.5, squirrel 3.2. thx to Alberto Demichelis for squirrel.
-tested on windows 11.
+tested on windows 11.    
+    
 
-commands working:    
+# commands:       
 print(string)    
 node = get_node(nodename) // stores the id    
 get_name(node.id)    
