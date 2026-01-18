@@ -13,7 +13,7 @@ get_position(node.id)
 set_name and set_position    
 
 example interpreterprogram procedure with PENSIZE 3:    
-![Pic1](YaGoSl/firstpic.jpg)
+![Pic1](firstpic.jpg)
 
 
 # example test.nut in project demo lets the sprite fly:    
