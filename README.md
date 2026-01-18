@@ -12,7 +12,7 @@ get_name(node.id)
 get_position(node.id)    
 set_name and set_position    
 
-example interpreterprogram procedure with PENSIZE 3:    
+example test.nut:    
 ![Pic1](firstpic.jpg)
 
 
