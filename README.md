@@ -12,6 +12,10 @@ get_name(node.id)
 get_position(node.id)    
 set_name and set_position    
 
+example interpreterprogram procedure with PENSIZE 3:    
+![Pic1](Godot3DInterpreter/pics/firstpic.JPG)
+
+
 # example test.nut in project demo lets the sprite fly:    
 ```
 // Squirrel Code
