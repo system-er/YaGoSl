@@ -209,7 +209,7 @@ SQInteger squirrel_create_node(HSQUIRRELVM v) {
 
     return 1;
 }
-
+/*
 SQInteger squirrel_set_property(HSQUIRRELVM v) {
     SQInteger id;
     const SQChar* property_name;
@@ -226,7 +226,54 @@ SQInteger squirrel_set_property(HSQUIRRELVM v) {
     }
     return 0;
 }
+*/
+SQInteger squirrel_set_property(HSQUIRRELVM v) {
+    SQInteger id;
+    const SQChar* property_name;
 
+    if (SQ_FAILED(sq_getinteger(v, 2, &id)) || SQ_FAILED(sq_getstring(v, 3, &property_name))) {
+        return sq_throwerror(v, _SC("Usage: set_prop(id, property_name, value)"));
+    }
+
+    Object *obj = ObjectDB::get_instance((uint64_t)id);
+    if (!obj) return 0;
+
+    Variant godot_value;
+    SQObjectType type = sq_gettype(v, 4);
+
+    switch (type) {
+        case OT_INTEGER: {
+            SQInteger val;
+            sq_getinteger(v, 4, &val);
+            godot_value = (int64_t)val;
+            break;
+        }
+        case OT_FLOAT: {
+            SQFloat val;
+            sq_getfloat(v, 4, &val);
+            godot_value = (double)val;
+            break;
+        }
+        case OT_STRING: {
+            const SQChar* val;
+            sq_getstring(v, 4, &val);
+            godot_value = String(val);
+            break;
+        }
+        case OT_BOOL: {
+            SQBool val;
+            sq_getbool(v, 4, &val);
+            godot_value = (bool)val;
+            break;
+        }
+        default:
+            return sq_throwerror(v, _SC("Unsupported value type for set_prop"));
+    }
+
+    obj->set(StringName(property_name), godot_value);
+
+    return 0;
+}
 
 void GodotSquirrel::set_script(const String &p_script) {
     script_source = p_script;
