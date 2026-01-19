@@ -8,6 +8,12 @@ and type the name of the .nut-file in the godotsquirrel-node in inspector.
 WIP - programmed with godot 4.5, squirrel 3.2. thx to Alberto Demichelis for squirrel.
 tested on windows 11. 
     
+  
+
+firstpic:    
+![Pic1](firstpic.jpg)
+
+
 
 # commands:       
 print(string)    
@@ -15,10 +21,10 @@ node = get_node(nodename) // stores the id
 get_name(node.id)    
 get_position(node.id)    
 set_name and set_position    
+create_node(nodename) // for example: local lbl = create_node("Label")
+set_property(property, string) // for example: set_property(lbl.id, "text", "this is YaGoSl")
 
-firstpic:    
-![Pic1](firstpic.jpg)
-
+    
 
 # example test.nut in project demo lets the sprite fly:    
 ```
