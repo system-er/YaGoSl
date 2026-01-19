@@ -17,15 +17,14 @@ firstpic:
 
 # commands:       
 print(string)    
-node = get_node(nodename) // stores the id    
-get_name(node.id)    
-get_position(node.id)    
+node = get_node(nodename) // stores the id     
 set_name    
 set_position    
 create_node(nodename) // for example: local lbl = create_node("Label")    
 set_property(node.id, property, value) // for example: set_property(lbl.id, "text", "this is YaGoSl")    
 // other example with vector2: set_property(id, "scale", { x = 1.5, y = 1.5 })    
 // or set_property with color (id, "modulate", { r=1, g=0.2, b=0.2 })    
+get_property(node.id, property)    
 
 
     
@@ -39,6 +38,7 @@ sprite <- null // global variables
 timepassed <- 0
 
 
+
 function _ready() {
     print("hello world from squirrel ready")
     sprite <- get_node("Sprite2D")
@@ -47,12 +47,11 @@ function _ready() {
         print("node not found")
         return
     }
-    print("node name: " + get_name(sprite.id))
     timepassed <- 0
 
     local lbl = create_node("Label")
     set_property(lbl.id, "text", "this is YaGoSl")
-    set_position(lbl.id, 20, 20)
+    set_property(lbl.id, "position", { x = 20, y = 20 })
     set_property(lbl.id, "scale", { x = 2.5, y = 2.5 })
 }
 
@@ -61,14 +60,14 @@ function _process(delta) {
     timepassed <- timepassed + delta
     
     if (!sprite) return
-    local pos = get_position(sprite.id)
+    local pos = get_property(sprite.id, "position")
     local new_x = pos.x + timepassed
     local new_y = pos.y
     if (timepassed > 6) {
         timepassed <- 0
         new_x = 0
     }
-    set_position(sprite.id, new_x, new_y)
+    set_property(sprite.id, "position", { x = new_x, y = new_y })
 }
 ```
 
@@ -82,5 +81,6 @@ put godot-cpp version 4.5 to directory godot-cpp
 - new commands create_node and set_property (see list commands)
 - now set_property works also with vector2 (example: set_property(id, "position", { x = 10, y = 20 }))
 - set_property also with vector3, bool, color, dictionary, array
+- new command get_proterty equal to set_property
   
   
