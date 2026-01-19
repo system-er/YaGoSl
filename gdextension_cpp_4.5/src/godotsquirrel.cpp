@@ -40,7 +40,7 @@ static bool table_get_float(HSQUIRRELVM v, SQInteger idx, const char *key, SQFlo
     }
     return false;
 }
-
+    
 static Variant squirrel_to_variant(HSQUIRRELVM v, SQInteger idx) {
     SQObjectType type = sq_gettype(v, idx);
 
@@ -50,72 +50,62 @@ static Variant squirrel_to_variant(HSQUIRRELVM v, SQInteger idx) {
             sq_getinteger(v, idx, &i);
             return Variant((int64_t)i);
         }
-
         case OT_FLOAT: {
             SQFloat f;
             sq_getfloat(v, idx, &f);
             return Variant((double)f);
         }
-
         case OT_BOOL: {
             SQBool b;
             sq_getbool(v, idx, &b);
             return Variant((bool)b);
         }
-
         case OT_STRING: {
             const SQChar *s;
             sq_getstring(v, idx, &s);
             return Variant(String(s));
         }
-
         case OT_ARRAY: {
             Array arr;
             SQInteger len = sq_getsize(v, idx);
             for (SQInteger i = 0; i < len; i++) {
                 sq_pushinteger(v, i);
-                if (SQ_SUCCEEDED(sq_get(v, idx))) {
+                if (SQ_SUCCEEDED(sq_get(v, idx > 0 ? idx : idx - 1))) {
                     arr.append(squirrel_to_variant(v, -1));
                     sq_pop(v, 1);
                 }
             }
             return arr;
         }
-
         case OT_TABLE: {
+
             SQFloat x, y, z, r, g, b, a;
-
-            bool has_x = table_get_float(v, idx, "x", x);
-            bool has_y = table_get_float(v, idx, "y", y);
-            bool has_z = table_get_float(v, idx, "z", z);
-
-            if (has_x && has_y && has_z) {
-                return Vector3(x, y, z);
-            }
-            if (has_x && has_y) {
+            if (table_get_float(v, idx, "x", x) && table_get_float(v, idx, "y", y)) {
+                if (table_get_float(v, idx, "z", z)) return Vector3(x, y, z);
                 return Vector2(x, y);
             }
-
-            bool has_r = table_get_float(v, idx, "r", r);
-            bool has_g = table_get_float(v, idx, "g", g);
-            bool has_b = table_get_float(v, idx, "b", b);
-            bool has_a = table_get_float(v, idx, "a", a);
-
-            if (has_r && has_g && has_b) {
-                return Color(r, g, b, has_a ? a : 1.0f);
+            if (table_get_float(v, idx, "r", r) && table_get_float(v, idx, "g", g) && table_get_float(v, idx, "b", b)) {
+                float alpha = table_get_float(v, idx, "a", a) ? a : 1.0f;
+                return Color(r, g, b, alpha);
             }
+
 
             Dictionary dict;
             sq_pushnull(v);
-            while (SQ_SUCCEEDED(sq_next(v, idx))) {
+
+            SQInteger abs_idx = (idx < 0) ? sq_gettop(v) + idx : idx;
+            
+            while (SQ_SUCCEEDED(sq_next(v, abs_idx))) {
+
                 Variant key = squirrel_to_variant(v, -2);
-                Variant value = squirrel_to_variant(v, -1);
-                dict[key] = value;
+                Variant val = squirrel_to_variant(v, -1);
+                dict[key] = val;
                 sq_pop(v, 2);
             }
+            sq_pop(v, 1);
             return dict;
         }
-
+        case OT_NULL:
         default:
             return Variant();
     }
@@ -204,6 +194,7 @@ SQInteger squirrel_get_node(HSQUIRRELVM v) {
     return 1;
 }
 
+/*
 SQInteger squirrel_get_name(HSQUIRRELVM v) {
     SQInteger id;
     if (SQ_FAILED(sq_getinteger(v, 2, &id))) {
@@ -220,7 +211,9 @@ SQInteger squirrel_get_name(HSQUIRRELVM v) {
     sq_pushstring(v, name.utf8().get_data(), -1);
     return 1;
 }
+*/
 
+/*
 SQInteger squirrel_set_name(HSQUIRRELVM v) {
     SQInteger id;
     const SQChar* new_name;
@@ -238,7 +231,9 @@ SQInteger squirrel_set_name(HSQUIRRELVM v) {
     node->set_name(String(new_name));
     return 0;
 }
+*/
 
+/*
 SQInteger squirrel_get_position(HSQUIRRELVM v) {
     SQInteger id;
 
@@ -272,7 +267,9 @@ SQInteger squirrel_get_position(HSQUIRRELVM v) {
 
     return 1;
 }
+*/
 
+/*
 SQInteger squirrel_set_position(HSQUIRRELVM v) {
     SQInteger id;
     SQFloat x, y;
@@ -296,7 +293,7 @@ SQInteger squirrel_set_position(HSQUIRRELVM v) {
     node2d->set_position(Vector2(x, y));
     return 0;
 }
-
+*/
 
 SQInteger squirrel_create_node(HSQUIRRELVM v) {
     const SQChar* class_name_str;
@@ -390,6 +387,64 @@ SQInteger squirrel_set_property(HSQUIRRELVM v) {
 }
 */
 
+
+SQInteger squirrel_get_property(HSQUIRRELVM v) {
+    SQInteger id;
+    const SQChar *property;
+
+    if (SQ_FAILED(sq_getinteger(v, 2, &id)) ||
+        SQ_FAILED(sq_getstring(v, 3, &property))) {
+        return sq_throwerror(v, _SC("get_property(id, property_name)"));
+    }
+
+    Object *obj = ObjectDB::get_instance((uint64_t)id);
+    if (!obj) {
+        sq_pushnull(v);
+        return 1;
+    }
+
+    Variant value = obj->get(StringName(property));
+    
+    if (value.get_type() == Variant::NIL) {
+        sq_pushnull(v);
+    } else if (value.get_type() == Variant::FLOAT) {
+        sq_pushfloat(v, (SQFloat)value);
+    } else if (value.get_type() == Variant::INT) {
+        sq_pushinteger(v, (SQInteger)value);
+    } else if (value.get_type() == Variant::STRING) {
+        sq_pushstring(v, value.operator String().utf8().get_data(), -1);
+    } else if (value.get_type() == Variant::BOOL) {
+        sq_pushbool(v, value.operator bool());
+    } else if (value.get_type() == Variant::VECTOR2) {
+        Vector2 vec = value;
+        sq_newtable(v);
+        sq_pushstring(v, _SC("x"), -1);
+        sq_pushfloat(v, vec.x);
+        sq_newslot(v, -3, SQFalse);
+        sq_pushstring(v, _SC("y"), -1);
+        sq_pushfloat(v, vec.y);
+        sq_newslot(v, -3, SQFalse);
+    } else if (value.get_type() == Variant::VECTOR3) {
+        Vector3 vec = value;
+        sq_newtable(v);
+        sq_pushstring(v, _SC("x"), -1);
+        sq_pushfloat(v, vec.x);
+        sq_newslot(v, -3, SQFalse);
+        sq_pushstring(v, _SC("y"), -1);
+        sq_pushfloat(v, vec.y);
+        sq_newslot(v, -3, SQFalse);
+        sq_pushstring(v, _SC("z"), -1);
+        sq_pushfloat(v, vec.z);
+        sq_newslot(v, -3, SQFalse);
+    } else {
+
+        sq_pushstring(v, _SC("[complex type]"), -1);
+    }
+
+    return 1;
+}
+
+
 SQInteger squirrel_set_property(HSQUIRRELVM v) {
     SQInteger id;
     const SQChar *property;
@@ -430,12 +485,13 @@ void GodotSquirrel::load_script(const String &stringscript) {
 
     bind("print", squirrel_godot_print);
     bind("get_node", squirrel_get_node);
-    bind("get_name", squirrel_get_name);
-    bind("set_name", squirrel_set_name);
-    bind("get_position", squirrel_get_position);
-    bind("set_position", squirrel_set_position);
+    //bind("get_name", squirrel_get_name);
+    //bind("set_name", squirrel_set_name);
+    //bind("get_position", squirrel_get_position);
+    //bind("set_position", squirrel_set_position);
     bind("create_node", squirrel_create_node);
     bind("set_property", squirrel_set_property);
+    bind("get_property", squirrel_get_property);
 
     sq_pop(vm, 1); // root
     CharString utf8 = stringscript.utf8();
