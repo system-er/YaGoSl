@@ -19,6 +19,7 @@ function _ready() {
     local lbl = create_node("Label")
     set_property(lbl.id, "text", "this is YaGoSl")
     set_position(lbl.id, 20, 20)
+    set_property(lbl.id, "scale", { x = 2.5, y = 2.5 })
 }
 
 
