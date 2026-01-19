@@ -45,10 +45,7 @@ function _ready() {
         return
     }
     print("node name: " + get_name(sprite.id))
-    local pos = get_position(sprite.id)
-    print("node position   pos.x:" + pos.x + "   pos.y:" + pos.y )
     timepassed <- 0
-    print("timepassed: " + timepassed)
 
     local lbl = create_node("Label")
     set_property(lbl.id, "text", "this is YaGoSl")
