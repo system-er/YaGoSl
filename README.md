@@ -70,3 +70,8 @@ function _process(delta) {
 # build:    
 put squirrel version 3.2 to directory src/squirrel-3.2    
 put godot-cpp version 4.5 to directory godot-cpp    
+
+
+# last changes:
+- new commands create_node and set_property (see list commands)
+  
