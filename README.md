@@ -81,4 +81,6 @@ put godot-cpp version 4.5 to directory godot-cpp
 # last changes:
 - new commands create_node and set_property (see list commands)
 - now set_property works also with vector2 (example: set_property(id, "position", { x = 10, y = 20 }))
+- set_property also with vector3, bool, color, dictionary, array
+  
   
