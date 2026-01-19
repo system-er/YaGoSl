@@ -48,6 +48,10 @@ function _ready() {
     print("node position   pos.x:" + pos.x + "   pos.y:" + pos.y )
     timepassed <- 0
     print("timepassed: " + timepassed)
+
+    local lbl = create_node("Label")
+    set_property(lbl.id, "text", "this is YaGoSl")
+    set_position(lbl.id, 20, 20)
 }
 
 
