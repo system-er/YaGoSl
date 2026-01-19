@@ -24,6 +24,7 @@ set_name
 set_position    
 create_node(nodename) // for example: local lbl = create_node("Label")    
 set_property(node.id, property, value) // for example: set_property(lbl.id, "text", "this is YaGoSl")    
+// other example with vector2: set_property(id, "scale", { x = 1.5, y = 1.5 }) 
 
     
 
@@ -76,4 +77,5 @@ put godot-cpp version 4.5 to directory godot-cpp
 
 # last changes:
 - new commands create_node and set_property (see list commands)
+- now set_property works also with vector2 (example: set_property(id, "position", { x = 10, y = 20 }))
   
