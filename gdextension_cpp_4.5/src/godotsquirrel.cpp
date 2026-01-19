@@ -11,7 +11,21 @@
 #include <godot_cpp/variant/vector2.hpp>
 #include <godot_cpp/classes/file_access.hpp>
 
+
 using namespace godot;
+
+
+
+GodotSquirrel::GodotSquirrel() {
+    UtilityFunctions::print("C++ constructor called");
+    vm = sq_open(1024);
+    set_process(true);
+}
+
+
+GodotSquirrel::~GodotSquirrel() {
+	// Add your cleanup here.
+}
 
 
 
@@ -20,6 +34,7 @@ static Node *get_node_from_id(uint64_t id) {
     if (!obj) return nullptr;
     return Object::cast_to<Node>(obj);
 }
+
 
 SQInteger squirrel_godot_print(HSQUIRRELVM v) {
     SQInteger nargs = sq_gettop(v);
@@ -161,17 +176,57 @@ SQInteger squirrel_set_position(HSQUIRRELVM v) {
 }
 
 
+SQInteger squirrel_create_node(HSQUIRRELVM v) {
+    const SQChar* class_name_str;
 
-GodotSquirrel::GodotSquirrel() {
-    UtilityFunctions::print("C++ constructor called");
-    vm = sq_open(1024);
-    set_process(true);
+    if (SQ_FAILED(sq_getstring(v, 2, &class_name_str))) {
+        return sq_throwerror(v, _SC("create_node(class_name) requires a string"));
+    }
+
+    StringName class_name = StringName(class_name_str);
+    if (!ClassDB::class_exists(class_name)) {
+        return sq_throwerror(v, _SC("Godot class does not exist"));
+    }
+
+    Object *obj = ClassDB::instantiate(class_name);
+    Node *new_node = Object::cast_to<Node>(obj);
+
+    if (!new_node) {
+        memdelete(obj);
+        return sq_throwerror(v, _SC("Object is not a Node type"));
+    }
+
+    MainLoop* main_loop = Engine::get_singleton()->get_main_loop();
+    SceneTree* tree = Object::cast_to<SceneTree>(main_loop);
+    if (tree && tree->get_root()) {
+        tree->get_root()->call_deferred("add_child", new_node);
+    }
+
+    sq_newtable(v);
+    sq_pushstring(v, _SC("id"), -1);
+    sq_pushinteger(v, (SQInteger)new_node->get_instance_id());
+    sq_newslot(v, -3, SQFalse);
+
+    return 1;
 }
 
+SQInteger squirrel_set_property(HSQUIRRELVM v) {
+    SQInteger id;
+    const SQChar* property_name;
+    
+    sq_getinteger(v, 2, &id);
+    sq_getstring(v, 3, &property_name);
 
-GodotSquirrel::~GodotSquirrel() {
-	// Add your cleanup here.
+    Object *obj = ObjectDB::get_instance((uint64_t)id);
+    if (obj) {
+        const SQChar* val;
+        sq_getstring(v, 4, &val);
+        
+        obj->set(StringName(property_name), String(val));
+    }
+    return 0;
 }
+
 
 void GodotSquirrel::set_script(const String &p_script) {
     script_source = p_script;
@@ -198,6 +253,8 @@ void GodotSquirrel::load_script(const String &stringscript) {
     bind("set_name", squirrel_set_name);
     bind("get_position", squirrel_get_position);
     bind("set_position", squirrel_set_position);
+    bind("create_node", squirrel_create_node);
+    bind("set_property", squirrel_set_property);
 
     sq_pop(vm, 1); // root
     CharString utf8 = stringscript.utf8();
@@ -262,29 +319,9 @@ void GodotSquirrel::_process(double delta) {
 
     sq_pop(vm, 1); // Pop den root table
 }
-/*
-void GodotSquirrel::_draw() {
-    UtilityFunctions::print("GodotSquirrel _draw called");
 
-    if (!vm) {
-        UtilityFunctions::printerr("_draw error: no vm");
-        return;
-    }
-    sq_pushroottable(vm);
-    sq_pushstring(vm, _SC("_draw"), -1);
 
-    if (SQ_SUCCEEDED(sq_get(vm, -2))) {
-        sq_pushroottable(vm);
-        if (SQ_FAILED(sq_call(vm, 1, SQFalse, SQTrue))) {
-            UtilityFunctions::printerr("squirrel runtime error in _ready");
-        }
-        sq_pop(vm, 1); // function
-    }
 
-    sq_pop(vm, 1); // root
-
-}
-*/
 void GodotSquirrel::set_script_path(const String &p_path) {
     script_path = p_path;
 
