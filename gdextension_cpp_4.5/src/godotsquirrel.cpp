@@ -28,6 +28,33 @@ GodotSquirrel::~GodotSquirrel() {
 }
 
 
+static bool squirrel_table_to_vector2(HSQUIRRELVM v, SQInteger idx, Vector2 &out_vec) {
+    if (sq_gettype(v, idx) != OT_TABLE) return false;
+
+    SQFloat x = 0;
+    SQFloat y = 0;
+
+    sq_pushstring(v, _SC("x"), -1);
+    if (SQ_SUCCEEDED(sq_get(v, idx))) {
+        sq_getfloat(v, -1, &x);
+        sq_pop(v, 1);
+    } else {
+        sq_pop(v, 1);
+        return false;
+    }
+
+    sq_pushstring(v, _SC("y"), -1);
+    if (SQ_SUCCEEDED(sq_get(v, idx))) {
+        sq_getfloat(v, -1, &y);
+        sq_pop(v, 1);
+    } else {
+        sq_pop(v, 1);
+        return false;
+    }
+
+    out_vec = Vector2(x, y);
+    return true;
+}
 
 static Node *get_node_from_id(uint64_t id) {
     Object *obj = ObjectDB::get_instance(id);
@@ -209,30 +236,14 @@ SQInteger squirrel_create_node(HSQUIRRELVM v) {
 
     return 1;
 }
-/*
-SQInteger squirrel_set_property(HSQUIRRELVM v) {
-    SQInteger id;
-    const SQChar* property_name;
-    
-    sq_getinteger(v, 2, &id);
-    sq_getstring(v, 3, &property_name);
 
-    Object *obj = ObjectDB::get_instance((uint64_t)id);
-    if (obj) {
-        const SQChar* val;
-        sq_getstring(v, 4, &val);
-        
-        obj->set(StringName(property_name), String(val));
-    }
-    return 0;
-}
-*/
+
 SQInteger squirrel_set_property(HSQUIRRELVM v) {
     SQInteger id;
     const SQChar* property_name;
 
     if (SQ_FAILED(sq_getinteger(v, 2, &id)) || SQ_FAILED(sq_getstring(v, 3, &property_name))) {
-        return sq_throwerror(v, _SC("Usage: set_prop(id, property_name, value)"));
+        return sq_throwerror(v, _SC("Usage: set_property(id, property_name, value)"));
     }
 
     Object *obj = ObjectDB::get_instance((uint64_t)id);
@@ -266,8 +277,16 @@ SQInteger squirrel_set_property(HSQUIRRELVM v) {
             godot_value = (bool)val;
             break;
         }
+        case OT_TABLE: {
+            Vector2 vec2;
+            if (squirrel_table_to_vector2(v, 4, vec2)) {
+                godot_value = vec2;
+                break;
+            }
+            return sq_throwerror(v, _SC("Unsupported table format for set_property"));
+        }
         default:
-            return sq_throwerror(v, _SC("Unsupported value type for set_prop"));
+            return sq_throwerror(v, _SC("Unsupported value type for set_property"));
     }
 
     obj->set(StringName(property_name), godot_value);
