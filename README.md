@@ -21,8 +21,8 @@ node = get_node(nodename) // stores the id
 get_name(node.id)    
 get_position(node.id)    
 set_name and set_position    
-create_node(nodename) // for example: local lbl = create_node("Label")
-set_property(property, string) // for example: set_property(lbl.id, "text", "this is YaGoSl")
+create_node(nodename) // for example: local lbl = create_node("Label")    
+set_property(property, string) // for example: set_property(lbl.id, "text", "this is YaGoSl")    
 
     
 
