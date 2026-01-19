@@ -28,6 +28,101 @@ GodotSquirrel::~GodotSquirrel() {
 }
 
 
+static bool table_get_float(HSQUIRRELVM v, SQInteger idx, const char *key, SQFloat &out) {
+    sq_pushstring(v, _SC(key), -1);
+    if (SQ_SUCCEEDED(sq_get(v, idx))) {
+        if (sq_gettype(v, -1) == OT_FLOAT || sq_gettype(v, -1) == OT_INTEGER) {
+            sq_getfloat(v, -1, &out);
+            sq_pop(v, 1);
+            return true;
+        }
+        sq_pop(v, 1);
+    }
+    return false;
+}
+
+static Variant squirrel_to_variant(HSQUIRRELVM v, SQInteger idx) {
+    SQObjectType type = sq_gettype(v, idx);
+
+    switch (type) {
+        case OT_INTEGER: {
+            SQInteger i;
+            sq_getinteger(v, idx, &i);
+            return Variant((int64_t)i);
+        }
+
+        case OT_FLOAT: {
+            SQFloat f;
+            sq_getfloat(v, idx, &f);
+            return Variant((double)f);
+        }
+
+        case OT_BOOL: {
+            SQBool b;
+            sq_getbool(v, idx, &b);
+            return Variant((bool)b);
+        }
+
+        case OT_STRING: {
+            const SQChar *s;
+            sq_getstring(v, idx, &s);
+            return Variant(String(s));
+        }
+
+        case OT_ARRAY: {
+            Array arr;
+            SQInteger len = sq_getsize(v, idx);
+            for (SQInteger i = 0; i < len; i++) {
+                sq_pushinteger(v, i);
+                if (SQ_SUCCEEDED(sq_get(v, idx))) {
+                    arr.append(squirrel_to_variant(v, -1));
+                    sq_pop(v, 1);
+                }
+            }
+            return arr;
+        }
+
+        case OT_TABLE: {
+            SQFloat x, y, z, r, g, b, a;
+
+            bool has_x = table_get_float(v, idx, "x", x);
+            bool has_y = table_get_float(v, idx, "y", y);
+            bool has_z = table_get_float(v, idx, "z", z);
+
+            if (has_x && has_y && has_z) {
+                return Vector3(x, y, z);
+            }
+            if (has_x && has_y) {
+                return Vector2(x, y);
+            }
+
+            bool has_r = table_get_float(v, idx, "r", r);
+            bool has_g = table_get_float(v, idx, "g", g);
+            bool has_b = table_get_float(v, idx, "b", b);
+            bool has_a = table_get_float(v, idx, "a", a);
+
+            if (has_r && has_g && has_b) {
+                return Color(r, g, b, has_a ? a : 1.0f);
+            }
+
+            Dictionary dict;
+            sq_pushnull(v);
+            while (SQ_SUCCEEDED(sq_next(v, idx))) {
+                Variant key = squirrel_to_variant(v, -2);
+                Variant value = squirrel_to_variant(v, -1);
+                dict[key] = value;
+                sq_pop(v, 2);
+            }
+            return dict;
+        }
+
+        default:
+            return Variant();
+    }
+}
+
+
+
 static bool squirrel_table_to_vector2(HSQUIRRELVM v, SQInteger idx, Vector2 &out_vec) {
     if (sq_gettype(v, idx) != OT_TABLE) return false;
 
@@ -237,7 +332,7 @@ SQInteger squirrel_create_node(HSQUIRRELVM v) {
     return 1;
 }
 
-
+/*
 SQInteger squirrel_set_property(HSQUIRRELVM v) {
     SQInteger id;
     const SQChar* property_name;
@@ -293,6 +388,26 @@ SQInteger squirrel_set_property(HSQUIRRELVM v) {
 
     return 0;
 }
+*/
+
+SQInteger squirrel_set_property(HSQUIRRELVM v) {
+    SQInteger id;
+    const SQChar *property;
+
+    if (SQ_FAILED(sq_getinteger(v, 2, &id)) ||
+        SQ_FAILED(sq_getstring(v, 3, &property))) {
+        return sq_throwerror(v, _SC("set_property(id, name, value)"));
+    }
+
+    Object *obj = ObjectDB::get_instance((uint64_t)id);
+    if (!obj) return 0;
+
+    Variant value = squirrel_to_variant(v, 4);
+    obj->set(StringName(property), value);
+
+    return 0;
+}
+
 
 void GodotSquirrel::set_script(const String &p_script) {
     script_source = p_script;
