@@ -28,6 +28,7 @@ public:
 	~GodotSquirrel();
 	void _ready() override;
 	void _process(double delta) override;
+	//void _draw() override;
 	void set_script(const String &p_script);
 	void load_script(const String &code);
 	//void runScript(godot::String stringscript);

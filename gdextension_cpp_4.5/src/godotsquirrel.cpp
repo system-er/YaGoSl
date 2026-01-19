@@ -34,12 +34,11 @@ SQInteger squirrel_godot_print(HSQUIRRELVM v) {
 
 SQInteger squirrel_get_node(HSQUIRRELVM v) {
     const SQChar* path;
-    // 1. Pfad-Argument von Squirrel-Stack abgreifen (Index 2)
+
     if (SQ_FAILED(sq_getstring(v, 2, &path))) {
         return sq_throwerror(v, _SC("arg1 is not path"));
     }
 
-    // 2. SceneTree holen
     Engine* engine = Engine::get_singleton();
     if (!engine) {
         sq_pushnull(v);
@@ -53,7 +52,6 @@ SQInteger squirrel_get_node(HSQUIRRELVM v) {
         return 1;
     }
 
-    // 3. Node im Baum suchen
     Node* found_node = tree->get_root()->find_child(path, true, false);
     if (!found_node) {
         UtilityFunctions::print("squirrel: node not found: ", path);
@@ -61,19 +59,11 @@ SQInteger squirrel_get_node(HSQUIRRELVM v) {
         return 1;
     }
 
-    // 4. Ein Squirrel-Table erstellen, das die Node repräsentiert
     sq_newtable(v);
-
-    // Feld "id" in den Table schreiben
     sq_pushstring(v, _SC("id"), -1);
-    // WICHTIG: Als Integer speichern, damit get_name/get_position 
-    // direkt mit sq_getinteger darauf zugreifen können.
     sq_pushinteger(v, (SQInteger)found_node->get_instance_id());
-    
-    // Slot im Table setzen: table["id"] = instance_id
     sq_newslot(v, -3, SQFalse);
 
-    // 5. Den Table als Rückgabewert auf dem Stack lassen
     return 1;
 }
 
@@ -272,7 +262,29 @@ void GodotSquirrel::_process(double delta) {
 
     sq_pop(vm, 1); // Pop den root table
 }
+/*
+void GodotSquirrel::_draw() {
+    UtilityFunctions::print("GodotSquirrel _draw called");
 
+    if (!vm) {
+        UtilityFunctions::printerr("_draw error: no vm");
+        return;
+    }
+    sq_pushroottable(vm);
+    sq_pushstring(vm, _SC("_draw"), -1);
+
+    if (SQ_SUCCEEDED(sq_get(vm, -2))) {
+        sq_pushroottable(vm);
+        if (SQ_FAILED(sq_call(vm, 1, SQFalse, SQTrue))) {
+            UtilityFunctions::printerr("squirrel runtime error in _ready");
+        }
+        sq_pop(vm, 1); // function
+    }
+
+    sq_pop(vm, 1); // root
+
+}
+*/
 void GodotSquirrel::set_script_path(const String &p_path) {
     script_path = p_path;
 
