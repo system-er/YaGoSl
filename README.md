@@ -31,9 +31,8 @@ call_method // examples:
     // call_method(target_node, "queue_free")   
     // local tree = call_method(my_node, "get_tree")    
     // call_method(my_node, "emit_signal", "player_scored", 10)    
-    // if (call_method(my_node, "is_in_group", "enemies")) {
-    //     print("enemy!");
-    // }
+    // if (call_method(my_node, "is_in_group", "enemies")) { print("enemy!") }    
+    
 
 
     
