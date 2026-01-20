@@ -23,7 +23,7 @@ set_property(node.id, property, value) // for example: set_property(lbl.id, "tex
     // other example with vector2: set_property(id, "scale", { x = 1.5, y = 1.5 })    
     // or set_property with color (id, "modulate", { r=1, g=0.2, b=0.2 })    
 get_property(node.id, property)    
-call_method // examles:    
+call_method // examples:    
     // local sprite = call_method(my_node, "get_node", "Sprite2D")    
     // local parent = call_method(my_node, "get_parent")    
     // call_method(my_node, "set_visible", false)    
