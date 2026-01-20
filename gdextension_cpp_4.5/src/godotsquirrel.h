@@ -3,6 +3,7 @@
 
 
 #include <godot_cpp/classes/node.hpp>
+#include <godot_cpp/classes/input_event.hpp>
 #include <squirrel-3.2/include/squirrel.h>
 
 
@@ -27,6 +28,7 @@ public:
 	~GodotSquirrel();
 	void _ready() override;
 	void _process(double delta) override;
+	void _input(const Ref<InputEvent> &event) override;
 	void set_script(const String &p_script);
 	void load_script(const String &code);
 	void set_script_path(const String &p_path);
