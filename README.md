@@ -42,7 +42,8 @@ call_method // examples:
 // Squirrel Code
 
 
-sprite <- null // global variables
+parent <- null // global variables
+sprite <- null
 timepassed <- 0
 
 
