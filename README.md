@@ -83,6 +83,19 @@ function _process(delta) {
     }
     set_property(sprite.id, "position", { x = new_x, y = new_y })
 }
+
+
+function _input(event) {
+    //print("event! type: " + event.type);
+    
+    if (event.type == "key" && event.pressed) {
+        print("key: " + event.unicode.tochar());
+    }
+    
+    if (event.type == "mouse" && event.pressed) {
+        print("mouseclick: " + event.button + " at " + event.x);
+    }
+}
 ```
 
     
@@ -96,6 +109,8 @@ put godot-cpp version 4.5 to directory godot-cpp
 - now set_property works also with vector2 (example: set_property(id, "position", { x = 10, y = 20 }))
 - set_property also with vector3, bool, color, dictionary, array
 - new command get_proterty equal to set_property
-- new command call_method    
+- new command call_method
+- _input function for key and mouse-events
+  
   
   
