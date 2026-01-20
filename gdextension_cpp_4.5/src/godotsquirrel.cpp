@@ -10,6 +10,8 @@
 #include <godot_cpp/classes/node2d.hpp>
 #include <godot_cpp/variant/vector2.hpp>
 #include <godot_cpp/classes/file_access.hpp>
+#include <godot_cpp/classes/input_event_key.hpp>
+#include <godot_cpp/classes/input_event_mouse_button.hpp>
 
 
 using namespace godot;
@@ -23,6 +25,7 @@ GodotSquirrel::GodotSquirrel() {
         UtilityFunctions::printerr("VM not initialized!");
     }
     set_process(true);
+    set_process_input(true);
 }
 
 
@@ -657,6 +660,68 @@ void GodotSquirrel::_process(double delta) {
     sq_pop(vm, 1);
 }
 
+
+void GodotSquirrel::_input(const Ref<InputEvent> &event) {
+    if (vm == nullptr || event.is_null()) return;
+
+    sq_pushroottable(vm);
+    sq_pushstring(vm, "_input", -1);
+    
+    if (SQ_SUCCEEDED(sq_get(vm, -2))) {
+        sq_pushroottable(vm);
+        sq_newtable(vm);
+
+        bool supported_event = false;
+
+        Ref<InputEventKey> key_event = Object::cast_to<InputEventKey>(event.ptr());
+        if (key_event.is_valid()) {
+            supported_event = true;
+            sq_pushstring(vm, "type", -1);
+            sq_pushstring(vm, "key", -1);
+            sq_newslot(vm, -3, SQFalse);
+
+            sq_pushstring(vm, "unicode", -1);
+            sq_pushinteger(vm, (SQInteger)key_event->get_unicode());
+            sq_newslot(vm, -3, SQFalse);
+            
+            sq_pushstring(vm, "pressed", -1);
+            sq_pushbool(vm, key_event->is_pressed() ? SQTrue : SQFalse);
+            sq_newslot(vm, -3, SQFalse);
+        }
+
+        if (!supported_event) {
+            Ref<InputEventMouseButton> mouse_event = Object::cast_to<InputEventMouseButton>(event.ptr());
+            if (mouse_event.is_valid()) {
+                supported_event = true;
+                sq_pushstring(vm, "type", -1);
+                sq_pushstring(vm, "mouse", -1);
+                sq_newslot(vm, -3, SQFalse);
+
+                sq_pushstring(vm, "button", -1);
+                sq_pushinteger(vm, (SQInteger)mouse_event->get_button_index());
+                sq_newslot(vm, -3, SQFalse);
+
+                sq_pushstring(vm, "pressed", -1);
+                sq_pushbool(vm, mouse_event->is_pressed() ? SQTrue : SQFalse);
+                sq_newslot(vm, -3, SQFalse);
+
+                sq_pushstring(vm, "x", -1);
+                sq_pushfloat(vm, (SQFloat)mouse_event->get_position().x);
+                sq_newslot(vm, -3, SQFalse);
+
+                sq_pushstring(vm, "y", -1);
+                sq_pushfloat(vm, (SQFloat)mouse_event->get_position().y);
+                sq_newslot(vm, -3, SQFalse);
+            }
+        }
+
+        if (supported_event) {
+            if (SQ_FAILED(sq_call(vm, 2, SQFalse, SQTrue))) {
+            }
+        }
+    }
+    sq_pop(vm, 1);
+}
 
 
 void GodotSquirrel::set_script_path(const String &p_path) {
