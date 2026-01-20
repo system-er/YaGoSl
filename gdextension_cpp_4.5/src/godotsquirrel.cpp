@@ -40,6 +40,7 @@ static bool table_get_float(HSQUIRRELVM v, SQInteger idx, const char *key, SQFlo
     }
     return false;
 }
+
     
 static Variant squirrel_to_variant(HSQUIRRELVM v, SQInteger idx) {
     SQObjectType type = sq_gettype(v, idx);
@@ -111,7 +112,32 @@ static Variant squirrel_to_variant(HSQUIRRELVM v, SQInteger idx) {
     }
 }
 
+static Node *get_node_from_id(uint64_t id) {
+    Object *obj = ObjectDB::get_instance(id);
+    if (!obj) return nullptr;
+    return Object::cast_to<Node>(obj);
+}
 
+static Object *get_object_from_id(uint64_t id) {
+    return ObjectDB::get_instance(id);
+}
+
+static Array squirrel_array_to_array(HSQUIRRELVM v, SQInteger idx) {
+    Array arr;
+
+    if (sq_gettype(v, idx) != OT_ARRAY)
+        return arr;
+
+    SQInteger len = sq_getsize(v, idx);
+    for (SQInteger i = 0; i < len; i++) {
+        sq_pushinteger(v, i);
+        if (SQ_SUCCEEDED(sq_get(v, idx))) {
+            arr.append(squirrel_to_variant(v, -1));
+            sq_pop(v, 1);
+        }
+    }
+    return arr;
+}
 
 static bool squirrel_table_to_vector2(HSQUIRRELVM v, SQInteger idx, Vector2 &out_vec) {
     if (sq_gettype(v, idx) != OT_TABLE) return false;
@@ -141,10 +167,46 @@ static bool squirrel_table_to_vector2(HSQUIRRELVM v, SQInteger idx, Vector2 &out
     return true;
 }
 
-static Node *get_node_from_id(uint64_t id) {
-    Object *obj = ObjectDB::get_instance(id);
-    if (!obj) return nullptr;
-    return Object::cast_to<Node>(obj);
+
+
+SQInteger squirrel_call_command(HSQUIRRELVM v) {
+    SQInteger id;
+    const SQChar *method_name;
+
+    // call_command(id, method_name, args_array)
+    if (SQ_FAILED(sq_getinteger(v, 2, &id)) ||
+        SQ_FAILED(sq_getstring(v, 3, &method_name))) {
+        return sq_throwerror(v, _SC("call_command(id, method_name, args_array)"));
+    }
+
+    Object *obj = get_object_from_id((uint64_t)id);
+    if (!obj) {
+        sq_pushnull(v);
+        return 1;
+    }
+
+    Array args;
+    if (sq_gettop(v) >= 4 && sq_gettype(v, 4) == OT_ARRAY) {
+        args = squirrel_array_to_array(v, 4);
+    }
+
+    Variant result = obj->callv(StringName(method_name), args);
+
+    if (result.get_type() == Variant::NIL) {
+        sq_pushnull(v);
+    } else if (result.get_type() == Variant::INT) {
+        sq_pushinteger(v, (SQInteger)result);
+    } else if (result.get_type() == Variant::FLOAT) {
+        sq_pushfloat(v, (SQFloat)result);
+    } else if (result.get_type() == Variant::BOOL) {
+        sq_pushbool(v, (SQBool)result);
+    } else if (result.get_type() == Variant::STRING) {
+        sq_pushstring(v, result.operator String().utf8().get_data(), -1);
+    } else {
+        sq_pushnull(v);
+    }
+
+    return 1;
 }
 
 
@@ -492,6 +554,7 @@ void GodotSquirrel::load_script(const String &stringscript) {
     bind("create_node", squirrel_create_node);
     bind("set_property", squirrel_set_property);
     bind("get_property", squirrel_get_property);
+    bind("call_command", squirrel_call_command);
 
     sq_pop(vm, 1); // root
     CharString utf8 = stringscript.utf8();
