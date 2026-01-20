@@ -26,7 +26,7 @@ get_property(node.id, property)
 call_method // examples:    
     // local sprite = call_method(my_node, "get_node", "Sprite2D")    
     // local parent = call_method(my_node, "get_parent")    
-    // local grandparent = call_method(call_method(my_node, "get_parent"), "get_parent")
+    // local grandparent = call_method(call_method(my_node, "get_parent"), "get_parent")    
     // call_method(my_node, "set_visible", false)    
     // call_method(target_node, "queue_free")   
     // local tree = call_method(my_node, "get_tree")    
