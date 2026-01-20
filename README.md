@@ -20,18 +20,18 @@ print(string)
 node = get_node(nodename) // stores the id     
 create_node(nodename) // for example: local lbl = create_node("Label")    
 set_property(node.id, property, value) // for example: set_property(lbl.id, "text", "this is YaGoSl")    
-- other example with vector2: set_property(id, "scale", { x = 1.5, y = 1.5 })    
-- or set_property with color (id, "modulate", { r=1, g=0.2, b=0.2 })    
+// other example with vector2: set_property(id, "scale", { x = 1.5, y = 1.5 })    
+// or set_property with color (id, "modulate", { r=1, g=0.2, b=0.2 })    
 get_property(node.id, property)    
 call_method // examples:    
-- local sprite = call_method(my_node, "get_node", "Sprite2D")    
-- local parent = call_method(my_node, "get_parent")    
-- local grandparent = call_method(call_method(my_node, "get_parent"), "get_parent")    
-- call_method(my_node, "set_visible", false)    
-- call_method(target_node, "queue_free")   
-- local tree = call_method(my_node, "get_tree")    
-- call_method(my_node, "emit_signal", "player_scored", 10)    
-- if (call_method(my_node, "is_in_group", "enemies")) { print("enemy!") }    
+// local sprite = call_method(my_node, "get_node", "Sprite2D")    
+// local parent = call_method(my_node, "get_parent")    
+// local grandparent = call_method(call_method(my_node, "get_parent"), "get_parent")    
+// call_method(my_node, "set_visible", false)    
+// call_method(target_node, "queue_free")   
+// local tree = call_method(my_node, "get_tree")    
+// call_method(my_node, "emit_signal", "player_scored", 10)    
+// if (call_method(my_node, "is_in_group", "enemies")) { print("enemy!") }    
     
 
 
