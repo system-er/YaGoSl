@@ -1,7 +1,7 @@
 // Squirrel Code
 
-
-sprite <- null // global variables
+parent <- null // global variables 
+sprite <- null
 timepassed <- 0
 
 
@@ -14,6 +14,11 @@ function _ready() {
         return
     }
     timepassed <- 0
+
+    parent <- call_method(sprite, "get_parent");
+    print("parentid: " + parent.id)
+    local tree = call_method(parent, "get_tree")
+    print("treeid: " + tree.id)
 
     local lbl = create_node("Label")
     set_property(lbl.id, "text", "this is YaGoSl")
