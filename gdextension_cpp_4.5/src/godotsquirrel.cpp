@@ -642,21 +642,19 @@ void GodotSquirrel::_process(double delta) {
     sq_pushroottable(vm);              // 1. Stack: [root]
     sq_pushstring(vm, _SC("_process"), -1); // 2. Stack: [root, "_process"]
 
-    // Sucht _process im root table
     if (SQ_SUCCEEDED(sq_get(vm, -2))) { // 3. Stack: [root, function]
         
-        sq_pushroottable(vm);          // 4. Argument 1: 'this' (Stack: [root, function, root])
-        sq_pushfloat(vm, (SQFloat)delta); // 5. Argument 2: 'delta' (Stack: [root, function, root, delta])
+        sq_pushroottable(vm);
+        sq_pushfloat(vm, (SQFloat)delta);
 
-        // sq_call Argumente: 2 (this + delta)
         if (SQ_FAILED(sq_call(vm, 2, SQFalse, SQTrue))) {
             UtilityFunctions::printerr("Squirrel runtime error in _process (check if _process(delta) is defined)");
         }
         
-        sq_pop(vm, 1); // Pop die Funktion
+        sq_pop(vm, 1);
     }
 
-    sq_pop(vm, 1); // Pop den root table
+    sq_pop(vm, 1);
 }
 
 
