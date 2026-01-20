@@ -19,6 +19,9 @@ using namespace godot;
 GodotSquirrel::GodotSquirrel() {
     UtilityFunctions::print("C++ constructor called");
     vm = sq_open(1024);
+    if (!vm) {
+        UtilityFunctions::printerr("VM not initialized!");
+    }
     set_process(true);
 }
 
@@ -169,45 +172,6 @@ static bool squirrel_table_to_vector2(HSQUIRRELVM v, SQInteger idx, Vector2 &out
 
 
 
-SQInteger squirrel_call_command(HSQUIRRELVM v) {
-    SQInteger id;
-    const SQChar *method_name;
-
-    // call_command(id, method_name, args_array)
-    if (SQ_FAILED(sq_getinteger(v, 2, &id)) ||
-        SQ_FAILED(sq_getstring(v, 3, &method_name))) {
-        return sq_throwerror(v, _SC("call_command(id, method_name, args_array)"));
-    }
-
-    Object *obj = get_object_from_id((uint64_t)id);
-    if (!obj) {
-        sq_pushnull(v);
-        return 1;
-    }
-
-    Array args;
-    if (sq_gettop(v) >= 4 && sq_gettype(v, 4) == OT_ARRAY) {
-        args = squirrel_array_to_array(v, 4);
-    }
-
-    Variant result = obj->callv(StringName(method_name), args);
-
-    if (result.get_type() == Variant::NIL) {
-        sq_pushnull(v);
-    } else if (result.get_type() == Variant::INT) {
-        sq_pushinteger(v, (SQInteger)result);
-    } else if (result.get_type() == Variant::FLOAT) {
-        sq_pushfloat(v, (SQFloat)result);
-    } else if (result.get_type() == Variant::BOOL) {
-        sq_pushbool(v, (SQBool)result);
-    } else if (result.get_type() == Variant::STRING) {
-        sq_pushstring(v, result.operator String().utf8().get_data(), -1);
-    } else {
-        sq_pushnull(v);
-    }
-
-    return 1;
-}
 
 
 SQInteger squirrel_godot_print(HSQUIRRELVM v) {
@@ -531,6 +495,77 @@ void GodotSquirrel::set_script(const String &p_script) {
     load_script(script_source);
 }
 
+SQInteger squirrel_call_method(HSQUIRRELVM v) {
+    SQInteger initial_stack = sq_gettop(v);
+    
+    if (initial_stack < 3) {
+        return sq_throwerror(v, _SC("call_gd(obj_table, 'method', ...args) requires 2+ arguments"));
+    }
+
+    sq_pushstring(v, _SC("id"), -1);
+    if (SQ_FAILED(sq_get(v, 2))) {
+        return sq_throwerror(v, _SC("Argument 1 is not a valid Godot-Node table (missing 'id')"));
+    }
+    
+    SQInteger id_raw;
+    sq_getinteger(v, -1, &id_raw);
+    sq_pop(v, 1);
+
+    Object *obj = ObjectDB::get_instance((uint64_t)id_raw);
+    if (!obj) {
+        sq_pushnull(v);
+        return 1;
+    }
+
+    const SQChar* method_name_str;
+    sq_getstring(v, 3, &method_name_str);
+    StringName method_name(method_name_str);
+
+    Array godot_args;
+    for (SQInteger i = 4; i <= initial_stack; i++) {
+        godot_args.append(squirrel_to_variant(v, i));
+    }
+
+    Variant result = obj->callv(method_name, godot_args);
+
+    if (result.get_type() == Variant::OBJECT) {
+        Object* res_obj = result;
+        if (res_obj) {
+            sq_newtable(v);
+            sq_pushstring(v, _SC("id"), -1);
+            sq_pushinteger(v, (SQInteger)res_obj->get_instance_id());
+            sq_newslot(v, -3, SQFalse);
+        } else {
+            sq_pushnull(v);
+        }
+    } else if (result.get_type() == Variant::NIL) {
+        sq_pushnull(v);
+    } else {
+        sq_pushnull(v);
+    }
+
+    return 1;
+}
+
+void bind_squirrel_functions(HSQUIRRELVM vm) {
+    sq_pushroottable(vm);
+
+    auto bind = [&](const char* name, SQFUNCTION f) {
+        sq_pushstring(vm, _SC(name), -1);
+        sq_newclosure(vm, f, 0);
+        sq_newslot(vm, -3, SQFalse);
+    };
+
+    bind("print", squirrel_godot_print);
+    bind("call_method", squirrel_call_method);
+    bind("get_node", squirrel_get_node);
+    bind("create_node", squirrel_create_node);
+    bind("get_property", squirrel_get_property);
+    bind("set_property", squirrel_set_property);
+
+    sq_pop(vm, 1);
+}
+
 void GodotSquirrel::load_script(const String &stringscript) {
     UtilityFunctions::print("load_script started");
     //if (vm) { sq_close(vm); vm = nullptr; }
@@ -538,13 +573,16 @@ void GodotSquirrel::load_script(const String &stringscript) {
     //vm = sq_open(1024);
     sq_pushroottable(vm);
 
+    bind_squirrel_functions(vm);
+
+    /*
     // Bindings
     auto bind = [&](const char* name, SQFUNCTION f) {
         sq_pushstring(vm, _SC(name), -1);
         sq_newclosure(vm, f, 0);
         sq_newslot(vm, -3, SQFalse);
     };
-
+    
     bind("print", squirrel_godot_print);
     bind("get_node", squirrel_get_node);
     //bind("get_name", squirrel_get_name);
@@ -555,6 +593,7 @@ void GodotSquirrel::load_script(const String &stringscript) {
     bind("set_property", squirrel_set_property);
     bind("get_property", squirrel_get_property);
     bind("call_command", squirrel_call_command);
+    */
 
     sq_pop(vm, 1); // root
     CharString utf8 = stringscript.utf8();
