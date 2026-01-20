@@ -21,7 +21,7 @@ function _ready() {
     print("treeid: " + tree.id)
 
     local lbl = create_node("Label")
-    set_property(lbl.id, "text", "this is YaGoSl")
+    set_property(lbl.id, "text", "this is YaGoSl - press key or mouse to test input")
     set_property(lbl.id, "position", { x = 20, y = 20 })
     set_property(lbl.id, "scale", { x = 2.5, y = 2.5 })
 }
@@ -39,4 +39,17 @@ function _process(delta) {
         new_x = 0
     }
     set_property(sprite.id, "position", { x = new_x, y = new_y })
+}
+
+
+function _input(event) {
+    //print("event! type: " + event.type);
+    
+    if (event.type == "key" && event.pressed) {
+        print("key: " + event.unicode.tochar());
+    }
+    
+    if (event.type == "mouse" && event.pressed) {
+        print("mouseclick: " + event.button + " at " + event.x);
+    }
 }
