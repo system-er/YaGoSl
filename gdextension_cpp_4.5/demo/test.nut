@@ -7,8 +7,9 @@ timepassed <- 0
 
 function _ready() {
     print("hello world from squirrel ready")
-    //sprite <- get_node("Sprite2D")
-    sprite <- create_node("Sprite2D")
+    parent <- get_node("GodotSquirrel")
+    print("parentid: " + parent.id)
+    sprite <- create_node(parent.id, "Sprite2D")
     print("id: " + sprite.id)
     if (sprite == null) {
         print("node not found")
@@ -21,8 +22,7 @@ function _ready() {
     local new_y = 150
     set_property(sprite.id, "position", { x = new_x, y = new_y })
 
-
-    local lbl = create_node("Label")
+    local lbl = create_node(parent.id, "Label")
     set_property(lbl.id, "text", "this is YaGoSl - press key or mouse to test input")
     set_property(lbl.id, "position", { x = 20, y = 20 })
     set_property(lbl.id, "scale", { x = 2.5, y = 2.5 })
