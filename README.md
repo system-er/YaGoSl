@@ -17,14 +17,19 @@ firstpic:
 
 # commands:       
 print(string)    
+    
 node = get_node(nodename) // stores the id     
-create_node(nodename) // for example: local lbl = create_node("Label")    
+    
+create_node(nodename) // for example: local lbl = create_node("Label")   
+    
 set_property(node.id, property, value)    
 // for example: set_property(lbl.id, "text", "this is YaGoSl")    
 // other example with vector2: set_property(id, "scale", { x = 1.5, y = 1.5 })    
 // or set_property with color (id, "modulate", { r=1, g=0.2, b=0.2 })    
+    
 get_property(node.id, property)    
 // example: local pos = get_property(sprite.id, "position")    
+    
 call_method // examples:    
 // local sprite = call_method(my_node, "get_node", "Sprite2D")    
 // local parent = call_method(my_node, "get_parent")    
@@ -34,6 +39,7 @@ call_method // examples:
 // local tree = call_method(my_node, "get_tree")    
 // call_method(my_node, "emit_signal", "player_scored", 10)    
 // if (call_method(my_node, "is_in_group", "enemies")) { print("enemy!") }    
+    
 load_resource    
 // example: local tex = load_resource("res://icon.svg")    
 // and then: set_property(sprite.id, "texture", tex)    
