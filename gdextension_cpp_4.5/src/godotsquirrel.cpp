@@ -378,16 +378,25 @@ SQInteger squirrel_set_position(HSQUIRRELVM v) {
 */
 
 SQInteger squirrel_create_node(HSQUIRRELVM v) {
+    SQInteger id;
     const SQChar* class_name_str;
 
-    if (SQ_FAILED(sq_getstring(v, 2, &class_name_str))) {
-        return sq_throwerror(v, _SC("create_node(class_name) requires a string"));
+    if (SQ_FAILED(sq_getinteger(v, 2, &id)) ||
+        SQ_FAILED(sq_getstring(v, 3, &class_name_str))) {
+        return sq_throwerror(v, _SC("error create_node(nodeid, class_name)"));
+    }
+    UtilityFunctions::print("squirrel_create_node id: ", id);
+    Object *parent = ObjectDB::get_instance((uint64_t)id);
+    if (!parent) {
+        sq_pushnull(v);
+        return 1;
     }
 
     StringName class_name = StringName(class_name_str);
     if (!ClassDB::class_exists(class_name)) {
         return sq_throwerror(v, _SC("Godot class does not exist"));
     }
+    UtilityFunctions::print("squirrel_create_node classname: ", class_name_str);
 
     Object *obj = ClassDB::instantiate(class_name);
     Node *new_node = Object::cast_to<Node>(obj);
@@ -397,11 +406,12 @@ SQInteger squirrel_create_node(HSQUIRRELVM v) {
         return sq_throwerror(v, _SC("Object is not a Node type"));
     }
 
-    MainLoop* main_loop = Engine::get_singleton()->get_main_loop();
-    SceneTree* tree = Object::cast_to<SceneTree>(main_loop);
-    if (tree && tree->get_root()) {
-        tree->get_root()->call_deferred("add_child", new_node);
-    }
+    //MainLoop* main_loop = Engine::get_singleton()->get_main_loop();
+    //SceneTree* tree = Object::cast_to<SceneTree>(main_loop);
+    //if (tree && tree->get_root()) {
+    //    tree->get_root()->call_deferred("add_child", new_node);
+    //}
+    parent->call_deferred("add_child", new_node);
 
     sq_newtable(v);
     sq_pushstring(v, _SC("id"), -1);
