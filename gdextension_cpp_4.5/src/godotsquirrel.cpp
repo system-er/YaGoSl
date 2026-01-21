@@ -8,7 +8,11 @@
 #include <godot_cpp/classes/scene_tree.hpp>
 #include <godot_cpp/classes/window.hpp>
 #include <godot_cpp/classes/node2d.hpp>
+#include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/texture2d.hpp>
+//#include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/variant/vector2.hpp>
+#include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/input_event_key.hpp>
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
@@ -85,17 +89,27 @@ static Variant squirrel_to_variant(HSQUIRRELVM v, SQInteger idx) {
             return arr;
         }
         case OT_TABLE: {
-
-            SQFloat x, y, z, r, g, b, a;
-            if (table_get_float(v, idx, "x", x) && table_get_float(v, idx, "y", y)) {
-                if (table_get_float(v, idx, "z", z)) return Vector3(x, y, z);
-                return Vector2(x, y);
+            sq_pushstring(v, "ptr", -1);
+            // Wir schauen, ob der Key "ptr" im Table existiert
+            if (SQ_SUCCEEDED(sq_get(v, idx < 0 ? idx - 1 : idx))) {
+                SQUserPointer p;
+                if (SQ_SUCCEEDED(sq_getuserpointer(v, -1, &p))) {
+                    sq_pop(v, 1); // "ptr" wert vom Stack nehmen
+                    return Variant((Object*)p); // Als Godot-Objekt zurückgeben
+                }
+                sq_pop(v, 1); // Falls es kein Userpointer war
             }
-            if (table_get_float(v, idx, "r", r) && table_get_float(v, idx, "g", g) && table_get_float(v, idx, "b", b)) {
-                float alpha = table_get_float(v, idx, "a", a) ? a : 1.0f;
-                return Color(r, g, b, alpha);
+            else {
+                SQFloat x, y, z, r, g, b, a;
+                if (table_get_float(v, idx, "x", x) && table_get_float(v, idx, "y", y)) {
+                    if (table_get_float(v, idx, "z", z)) return Vector3(x, y, z);
+                    return Vector2(x, y);
+                }
+                if (table_get_float(v, idx, "r", r) && table_get_float(v, idx, "g", g) && table_get_float(v, idx, "b", b)) {
+                    float alpha = table_get_float(v, idx, "a", a) ? a : 1.0f;
+                    return Color(r, g, b, alpha);
+                }
             }
-
 
             Dictionary dict;
             sq_pushnull(v);
@@ -127,6 +141,7 @@ static Node *get_node_from_id(uint64_t id) {
 static Object *get_object_from_id(uint64_t id) {
     return ObjectDB::get_instance(id);
 }
+
 
 static Array squirrel_array_to_array(HSQUIRRELVM v, SQInteger idx) {
     Array arr;
@@ -173,8 +188,46 @@ static bool squirrel_table_to_vector2(HSQUIRRELVM v, SQInteger idx, Vector2 &out
     return true;
 }
 
+void push_godot_object_to_squirrel(HSQUIRRELVM v, Object* obj) {
+    if (!obj) {
+        sq_pushnull(v);
+        return;
+    }
+
+    sq_newtable(v); 
+    
+    sq_pushstring(v, "ptr", -1);
+    sq_pushuserpointer(v, obj);
+    sq_newslot(v, -3, SQFalse);
+
+    sq_pushstring(v, "_tostring", -1);
+    sq_newclosure(v, [](HSQUIRRELVM v) -> SQInteger {
+        sq_pushstring(v, "(GodotResource)", -1);
+        return 1;
+    }, 0);
+    sq_newslot(v, -3, SQFalse);
+}
 
 
+SQInteger squirrel_load_resource(HSQUIRRELVM v) {
+    const SQChar *path;
+    if (SQ_SUCCEEDED(sq_getstring(v, 2, &path))) {
+        Ref<Resource> res = ResourceLoader::get_singleton()->load(path);
+        if (res.is_null()) {
+            UtilityFunctions::print("Fehler: Ressource konnte nicht geladen werden: ", path);
+        } else {
+            UtilityFunctions::print("Erfolg: Ressource geladen: ", path);
+        }
+        
+        if (res.is_valid()) {
+            push_godot_object_to_squirrel(v, res.ptr());
+            res->reference(); 
+            return 1;
+        }
+    }
+    sq_pushnull(v);
+    return 1;
+}
 
 
 SQInteger squirrel_godot_print(HSQUIRRELVM v) {
@@ -565,6 +618,7 @@ void bind_squirrel_functions(HSQUIRRELVM vm) {
     bind("create_node", squirrel_create_node);
     bind("get_property", squirrel_get_property);
     bind("set_property", squirrel_set_property);
+    bind("load_resource", squirrel_load_resource);
 
     sq_pop(vm, 1);
 }
