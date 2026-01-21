@@ -34,6 +34,9 @@ call_method // examples:
 // local tree = call_method(my_node, "get_tree")    
 // call_method(my_node, "emit_signal", "player_scored", 10)    
 // if (call_method(my_node, "is_in_group", "enemies")) { print("enemy!") }    
+load_resource 
+// example: local tex = load_resource("res://icon.svg")
+// and then: set_property(sprite.id, "texture", tex)
     
 
 
@@ -113,6 +116,7 @@ put godot-cpp version 4.5 to directory godot-cpp
 - new command get_proterty equal to set_property
 - new command call_method
 - _input function for key and mouse-events
+- new command load_resource    
   
   
   
