@@ -20,7 +20,7 @@ print(string)
     
 node = get_node(nodename) // stores the id     
     
-create_node(nodename) // for example: local lbl = create_node("Label")   
+create_node(parentnode.id, nodename) // instatiate and add_child - for example: local lbl = create_node("Label")   
     
 set_property(node.id, property, value)    
 // for example: set_property(lbl.id, "text", "this is YaGoSl")    
@@ -52,34 +52,32 @@ load_resource
 ```
 // Squirrel Code
 
-
 parent <- null // global variables
 sprite <- null
 timepassed <- 0
 
-
-
 function _ready() {
     print("hello world from squirrel ready")
-    sprite <- get_node("Sprite2D")
+    parent <- get_node("GodotSquirrel")
+    print("parentid: " + parent.id)
+    sprite <- create_node(parent.id, "Sprite2D")
     print("id: " + sprite.id)
     if (sprite == null) {
         print("node not found")
         return
     }
-    timepassed <- 0
+    local tex = load_resource("res://icon.svg")
+    set_property(sprite.id, "texture", tex)
+    local pos = get_property(sprite.id, "position")
+    local new_x = 80
+    local new_y = 150
+    set_property(sprite.id, "position", { x = new_x, y = new_y })
 
-    parent <- call_method(sprite, "get_parent");
-    print("parentid: " + parent.id)
-    local tree = call_method(parent, "get_tree")
-    print("treeid: " + tree.id)
-
-    local lbl = create_node("Label")
-    set_property(lbl.id, "text", "this is YaGoSl")
+    local lbl = create_node(parent.id, "Label")
+    set_property(lbl.id, "text", "this is YaGoSl - press key or mouse to test input")
     set_property(lbl.id, "position", { x = 20, y = 20 })
     set_property(lbl.id, "scale", { x = 2.5, y = 2.5 })
 }
-
 
 function _process(delta) {
     timepassed <- timepassed + delta
@@ -94,7 +92,6 @@ function _process(delta) {
     }
     set_property(sprite.id, "position", { x = new_x, y = new_y })
 }
-
 
 function _input(event) {
     //print("event! type: " + event.type);
