@@ -21,11 +21,17 @@ print(string)
 node = get_node(nodename) // stores the id     
     
 create_node(parentnode.id, nodename) // instatiate and add_child - for example: local lbl = create_node("Label")   
+
+instantiate(node/object)
+// local mat = instantiate("StandardMaterial3D")    
     
 set_property(node.id, property, value)    
 // for example: set_property(lbl.id, "text", "this is YaGoSl")    
 // other example with vector2: set_property(id, "scale", { x = 1.5, y = 1.5 })    
 // or set_property with color (id, "modulate", { r=1, g=0.2, b=0.2 })    
+
+set_property_object(object.ptr, property, value    
+// example: set_property_object(mat, "albedo_color", {r=0.0, g=0.0, b=1.0, a=1.0})    
     
 get_property(node.id, property)    
 // example: local pos = get_property(sprite.id, "position")    
@@ -119,7 +125,9 @@ put godot-cpp version 4.5 to directory godot-cpp
 - new command get_proterty equal to set_property
 - new command call_method
 - _input function for key and mouse-events
-- new command load_resource    
+- new command load_resource
+- new commands set_property_object and instantiate (refCounted objects are hardcoded...)    
+  
   
   
   
