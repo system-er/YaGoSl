@@ -10,12 +10,20 @@
 #include <godot_cpp/classes/node2d.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/texture2d.hpp>
-//#include <godot_cpp/classes/node3d.hpp>
+#include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/variant/vector2.hpp>
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/input_event_key.hpp>
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/ref.hpp> 
+#include <godot_cpp/classes/resource.hpp>
+#include <godot_cpp/classes/primitive_mesh.hpp>
+#include <godot_cpp/classes/scene_tree.hpp>
+#include <godot_cpp/classes/box_mesh.hpp>
+#include <godot_cpp/classes/standard_material3d.hpp>
+
 
 
 using namespace godot;
@@ -89,38 +97,40 @@ static Variant squirrel_to_variant(HSQUIRRELVM v, SQInteger idx) {
             return arr;
         }
         case OT_TABLE: {
-            sq_pushstring(v, "ptr", -1);
-            // Wir schauen, ob der Key "ptr" im Table existiert
-            if (SQ_SUCCEEDED(sq_get(v, idx < 0 ? idx - 1 : idx))) {
+            sq_pushstring(v, _SC("ptr"), -1);
+            SQInteger table_idx = (idx < 0) ? (idx - 1) : idx;
+            
+            if (SQ_SUCCEEDED(sq_get(v, table_idx))) {
                 SQUserPointer p;
                 if (SQ_SUCCEEDED(sq_getuserpointer(v, -1, &p))) {
-                    sq_pop(v, 1); // "ptr" wert vom Stack nehmen
-                    return Variant((Object*)p); // Als Godot-Objekt zurückgeben
+                    sq_pop(v, 1);
+                    Object* obj = static_cast<Object*>(p);
+
+                    if (!obj) return Variant();
+
+                    if (obj->is_class("RefCounted")) {
+                        return Variant(Ref<RefCounted>(Object::cast_to<RefCounted>(obj)));
+                    }
+                    return Variant(obj);
                 }
-                sq_pop(v, 1); // Falls es kein Userpointer war
+                sq_pop(v, 1);
             }
-            else {
-                SQFloat x, y, z, r, g, b, a;
-                if (table_get_float(v, idx, "x", x) && table_get_float(v, idx, "y", y)) {
-                    if (table_get_float(v, idx, "z", z)) return Vector3(x, y, z);
-                    return Vector2(x, y);
-                }
-                if (table_get_float(v, idx, "r", r) && table_get_float(v, idx, "g", g) && table_get_float(v, idx, "b", b)) {
-                    float alpha = table_get_float(v, idx, "a", a) ? a : 1.0f;
-                    return Color(r, g, b, alpha);
-                }
+
+            SQFloat x, y, z, r, g, b, a;
+            if (table_get_float(v, idx, "x", x) && table_get_float(v, idx, "y", y)) {
+                if (table_get_float(v, idx, "z", z)) return Vector3(x, y, z);
+                return Vector2(x, y);
+            }
+            if (table_get_float(v, idx, "r", r) && table_get_float(v, idx, "g", g) && table_get_float(v, idx, "b", b)) {
+                float alpha = table_get_float(v, idx, "a", a) ? a : 1.0f;
+                return Color(r, g, b, alpha);
             }
 
             Dictionary dict;
             sq_pushnull(v);
-
             SQInteger abs_idx = (idx < 0) ? sq_gettop(v) + idx : idx;
-            
             while (SQ_SUCCEEDED(sq_next(v, abs_idx))) {
-
-                Variant key = squirrel_to_variant(v, -2);
-                Variant val = squirrel_to_variant(v, -1);
-                dict[key] = val;
+                dict[squirrel_to_variant(v, -2)] = squirrel_to_variant(v, -1);
                 sq_pop(v, 2);
             }
             sq_pop(v, 1);
@@ -214,9 +224,9 @@ SQInteger squirrel_load_resource(HSQUIRRELVM v) {
     if (SQ_SUCCEEDED(sq_getstring(v, 2, &path))) {
         Ref<Resource> res = ResourceLoader::get_singleton()->load(path);
         if (res.is_null()) {
-            UtilityFunctions::print("Fehler: Ressource konnte nicht geladen werden: ", path);
+            UtilityFunctions::print("error - load resource: ", path);
         } else {
-            UtilityFunctions::print("Erfolg: Ressource geladen: ", path);
+            UtilityFunctions::print("resource loaded: ", path);
         }
         
         if (res.is_valid()) {
@@ -240,6 +250,7 @@ SQInteger squirrel_godot_print(HSQUIRRELVM v) {
     }
     return 0;
 }
+
 
 SQInteger squirrel_get_node(HSQUIRRELVM v) {
     const SQChar* path;
@@ -276,106 +287,129 @@ SQInteger squirrel_get_node(HSQUIRRELVM v) {
     return 1;
 }
 
-/*
-SQInteger squirrel_get_name(HSQUIRRELVM v) {
-    SQInteger id;
-    if (SQ_FAILED(sq_getinteger(v, 2, &id))) {
-        return sq_throwerror(v, _SC("no instance_id"));
+
+
+
+
+struct SquirrelGodotRef {
+    Ref<RefCounted> ref;
+    ~SquirrelGodotRef() {}
+};
+
+
+
+SQInteger squirrel_instantiate(HSQUIRRELVM v) {
+    const SQChar* classname = nullptr;
+    if (SQ_FAILED(sq_getstring(v, 2, &classname)) || !classname || classname[0] == '\0') {
+        return sq_throwerror(v, _SC("Usage: instantiate(classname: string)"));
     }
 
-    Node *node = get_node_from_id((uint64_t)id);
-    if (!node) {
-        sq_pushnull(v);
-        return 1;
-    }
-
-    String name = node->get_name();
-    sq_pushstring(v, name.utf8().get_data(), -1);
-    return 1;
-}
-*/
-
-/*
-SQInteger squirrel_set_name(HSQUIRRELVM v) {
-    SQInteger id;
-    const SQChar* new_name;
-
-    if (SQ_FAILED(sq_getinteger(v, 2, &id)) ||
-        SQ_FAILED(sq_getstring(v, 3, &new_name))) {
-        return sq_throwerror(v, _SC("set_name(id, name)"));
-    }
-
-    Node *node = get_node_from_id((uint64_t)id);
-    if (!node) {
-        return 0;
-    }
-
-    node->set_name(String(new_name));
-    return 0;
-}
-*/
-
-/*
-SQInteger squirrel_get_position(HSQUIRRELVM v) {
-    SQInteger id;
-
-    if (SQ_FAILED(sq_getinteger(v, 2, &id))) {
-        return sq_throwerror(v, _SC("get_position(id)"));
-    }
-
-    Node *node = get_node_from_id((uint64_t)id);
-    if (!node) {
-        sq_pushnull(v);
-        return 1;
-    }
-
-    Node2D *node2d = Object::cast_to<Node2D>(node);
-    if (!node2d) {
-        sq_pushnull(v);
-        return 1;
-    }
-
-    Vector2 pos = node2d->get_position();
+    godot::StringName cname(classname);
+    UtilityFunctions::print("[instantiate] class: ", cname);
 
     sq_newtable(v);
 
-    sq_pushstring(v, _SC("x"), -1);
-    sq_pushfloat(v, pos.x);
-    sq_newslot(v, -3, SQFalse);
+    bool handled_as_resource = false;
 
-    sq_pushstring(v, _SC("y"), -1);
-    sq_pushfloat(v, pos.y);
-    sq_newslot(v, -3, SQFalse);
+    if (ClassDB::class_exists(cname)) {
+        if (ClassDB::is_parent_class(cname, "Resource") ||
+            ClassDB::is_parent_class(cname, "RefCounted")) {
 
-    return 1;
+            handled_as_resource = true;
+
+            if (cname == godot::StringName("BoxMesh")) {
+                godot::Ref<godot::BoxMesh> mesh;
+                mesh.instantiate();
+
+                if (mesh.is_valid()) {
+                    SquirrelGodotRef* wrapper = memnew(SquirrelGodotRef);
+                    wrapper->ref = mesh;
+
+                    UtilityFunctions::print("[SUCCESS] BoxMesh via Ref::instantiate");
+
+                    sq_pushstring(v, _SC("ptr"), -1);
+                    sq_pushuserpointer(v, wrapper);
+                    sq_newslot(v, -3, SQFalse);
+
+                    sq_pushstring(v, _SC("type"), -1);
+                    sq_pushstring(v, _SC("refcounted"), -1);
+                    sq_newslot(v, -3, SQFalse);
+
+                    sq_pushstring(v, _SC("raw"), -1);
+                    sq_pushuserpointer(v, mesh.ptr());
+                    sq_newslot(v, -3, SQFalse);
+
+                    return 1;
+                } else {
+                    sq_poptop(v);
+                    return sq_throwerror(v, _SC("Failed to instantiate BoxMesh"));
+                }
+            }
+            else if (cname == godot::StringName("StandardMaterial3D")) {
+                godot::Ref<godot::StandardMaterial3D> mat;
+                mat.instantiate();
+
+                if (mat.is_valid()) {
+                    SquirrelGodotRef* wrapper = memnew(SquirrelGodotRef);
+                    wrapper->ref = mat;
+
+                    UtilityFunctions::print("[SUCCESS] StandardMaterial3D");
+
+                    sq_pushstring(v, _SC("ptr"), -1);
+                    sq_pushuserpointer(v, wrapper);
+                    sq_newslot(v, -3, SQFalse);
+
+                    sq_pushstring(v, _SC("type"), -1);
+                    sq_pushstring(v, _SC("refcounted"), -1);
+                    sq_newslot(v, -3, SQFalse);
+
+                    sq_pushstring(v, _SC("raw"), -1);
+                    sq_pushuserpointer(v, mat.ptr());
+                    sq_newslot(v, -3, SQFalse);
+
+                    return 1;
+                } else {
+                    sq_poptop(v);
+                    return sq_throwerror(v, _SC("Failed to instantiate StandardMaterial3D"));
+                }
+            }
+            else {
+                sq_poptop(v);
+                return sq_throwerror(v, _SC("Unsupported Resource/RefCounted type"));
+            }
+        }
+    }
+
+
+    if (!handled_as_resource) {
+        UtilityFunctions::print("[DEBUG] Normale Klasse (nicht Resource) → ClassDB::instantiate für ", cname);
+
+        godot::Object* obj = godot::ClassDB::instantiate(cname);
+        if (!obj) {
+            sq_poptop(v);
+            return sq_throwerror(v, _SC("Failed to instantiate class (ClassDB returned null)"));
+        }
+
+        sq_pushstring(v, _SC("id"), -1);
+        sq_pushinteger(v, (SQInteger)obj->get_instance_id());
+        sq_newslot(v, -3, SQFalse);
+
+        sq_pushstring(v, _SC("ptr"), -1);
+        sq_pushuserpointer(v, obj);
+        sq_newslot(v, -3, SQFalse);
+
+        sq_pushstring(v, _SC("type"), -1);
+        sq_pushstring(v, _SC("object"), -1);
+        sq_newslot(v, -3, SQFalse);
+
+        return 1;
+    }
+
+    sq_poptop(v);
+    return sq_throwerror(v, _SC("Unexpected path in instantiate"));
 }
-*/
 
-/*
-SQInteger squirrel_set_position(HSQUIRRELVM v) {
-    SQInteger id;
-    SQFloat x, y;
 
-    if (SQ_FAILED(sq_getinteger(v, 2, &id)) ||
-        SQ_FAILED(sq_getfloat(v, 3, &x)) ||
-        SQ_FAILED(sq_getfloat(v, 4, &y))) {
-        return sq_throwerror(v, _SC("set_position(id, x, y)"));
-    }
-
-    Node *node = get_node_from_id((uint64_t)id);
-    if (!node) {
-        return 0;
-    }
-
-    Node2D *node2d = Object::cast_to<Node2D>(node);
-    if (!node2d) {
-        return 0;
-    }
-
-    node2d->set_position(Vector2(x, y));
-    return 0;
-}
-*/
 
 SQInteger squirrel_create_node(HSQUIRRELVM v) {
     SQInteger id;
@@ -411,7 +445,14 @@ SQInteger squirrel_create_node(HSQUIRRELVM v) {
     //if (tree && tree->get_root()) {
     //    tree->get_root()->call_deferred("add_child", new_node);
     //}
-    parent->call_deferred("add_child", new_node);
+    //parent->call_deferred("add_child", new_node);
+    Node *parent_node = Object::cast_to<Node>(parent);
+    if (parent_node) {
+        parent_node->add_child(new_node);
+    } else {
+        memdelete(new_node);
+        return sq_throwerror(v, _SC("Parent is not a Node type"));
+    }
 
     sq_newtable(v);
     sq_pushstring(v, _SC("id"), -1);
@@ -421,63 +462,6 @@ SQInteger squirrel_create_node(HSQUIRRELVM v) {
     return 1;
 }
 
-/*
-SQInteger squirrel_set_property(HSQUIRRELVM v) {
-    SQInteger id;
-    const SQChar* property_name;
-
-    if (SQ_FAILED(sq_getinteger(v, 2, &id)) || SQ_FAILED(sq_getstring(v, 3, &property_name))) {
-        return sq_throwerror(v, _SC("Usage: set_property(id, property_name, value)"));
-    }
-
-    Object *obj = ObjectDB::get_instance((uint64_t)id);
-    if (!obj) return 0;
-
-    Variant godot_value;
-    SQObjectType type = sq_gettype(v, 4);
-
-    switch (type) {
-        case OT_INTEGER: {
-            SQInteger val;
-            sq_getinteger(v, 4, &val);
-            godot_value = (int64_t)val;
-            break;
-        }
-        case OT_FLOAT: {
-            SQFloat val;
-            sq_getfloat(v, 4, &val);
-            godot_value = (double)val;
-            break;
-        }
-        case OT_STRING: {
-            const SQChar* val;
-            sq_getstring(v, 4, &val);
-            godot_value = String(val);
-            break;
-        }
-        case OT_BOOL: {
-            SQBool val;
-            sq_getbool(v, 4, &val);
-            godot_value = (bool)val;
-            break;
-        }
-        case OT_TABLE: {
-            Vector2 vec2;
-            if (squirrel_table_to_vector2(v, 4, vec2)) {
-                godot_value = vec2;
-                break;
-            }
-            return sq_throwerror(v, _SC("Unsupported table format for set_property"));
-        }
-        default:
-            return sq_throwerror(v, _SC("Unsupported value type for set_property"));
-    }
-
-    obj->set(StringName(property_name), godot_value);
-
-    return 0;
-}
-*/
 
 
 SQInteger squirrel_get_property(HSQUIRRELVM v) {
@@ -547,12 +531,52 @@ SQInteger squirrel_set_property(HSQUIRRELVM v) {
     }
 
     Object *obj = ObjectDB::get_instance((uint64_t)id);
-    if (!obj) return 0;
+    if (!obj)
+        return sq_throwerror(v, _SC("wrong object-id"));
+
+    SQObjectType t = sq_gettype(v, 4);
+
+    if (t == OT_USERPOINTER) {
+        SQUserPointer ptr;
+        sq_getuserpointer(v, 4, &ptr);
+        SquirrelGodotRef* wrapper = static_cast<SquirrelGodotRef*>(ptr);
+        if (wrapper && wrapper->ref.is_valid()) {
+            obj->set(StringName(property), wrapper->ref);
+            return 0;
+        }
+    }
 
     Variant value = squirrel_to_variant(v, 4);
     obj->set(StringName(property), value);
 
     return 0;
+}
+
+
+SQInteger squirrel_set_property_object(HSQUIRRELVM v) {
+    sq_pushstring(v, _SC("raw"), -1);
+    if (SQ_FAILED(sq_get(v, 2))) {
+        sq_pushstring(v, _SC("ptr"), -1);
+        if (SQ_FAILED(sq_get(v, 2))) {
+            return sq_throwerror(v, _SC("No valid object pointer found (neither raw nor ptr)"));
+        }
+    }
+    
+    SQUserPointer p;
+    sq_getuserpointer(v, -1, &p);
+    Object* obj = static_cast<Object*>(p);
+    sq_pop(v, 1);
+
+    if (!obj) return sq_throwerror(v, _SC("null ref"));
+
+    const SQChar* prop_name;
+    sq_getstring(v, 3, &prop_name);
+    
+    Variant value = squirrel_to_variant(v, 4);
+
+    obj->set(String(prop_name), value);
+
+    return 0; 
 }
 
 
@@ -626,9 +650,11 @@ void bind_squirrel_functions(HSQUIRRELVM vm) {
     bind("call_method", squirrel_call_method);
     bind("get_node", squirrel_get_node);
     bind("create_node", squirrel_create_node);
+    bind("instantiate", squirrel_instantiate);
     bind("get_property", squirrel_get_property);
     bind("set_property", squirrel_set_property);
     bind("load_resource", squirrel_load_resource);
+    bind("set_property_object", squirrel_set_property_object);
 
     sq_pop(vm, 1);
 }
@@ -642,25 +668,6 @@ void GodotSquirrel::load_script(const String &stringscript) {
 
     bind_squirrel_functions(vm);
 
-    /*
-    // Bindings
-    auto bind = [&](const char* name, SQFUNCTION f) {
-        sq_pushstring(vm, _SC(name), -1);
-        sq_newclosure(vm, f, 0);
-        sq_newslot(vm, -3, SQFalse);
-    };
-    
-    bind("print", squirrel_godot_print);
-    bind("get_node", squirrel_get_node);
-    //bind("get_name", squirrel_get_name);
-    //bind("set_name", squirrel_set_name);
-    //bind("get_position", squirrel_get_position);
-    //bind("set_position", squirrel_set_position);
-    bind("create_node", squirrel_create_node);
-    bind("set_property", squirrel_set_property);
-    bind("get_property", squirrel_get_property);
-    bind("call_command", squirrel_call_command);
-    */
 
     sq_pop(vm, 1); // root
     CharString utf8 = stringscript.utf8();
