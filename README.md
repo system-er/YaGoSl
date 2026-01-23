@@ -51,7 +51,7 @@ load_resource
 // example: local tex = load_resource("res://icon.svg")    
 // and then: set_property(sprite.id, "texture", tex)    
     
-randint(range), randfloat(range)    
+randint(range), randfloat(range), srand(seed)    
 
     
 
@@ -128,7 +128,7 @@ put godot-cpp version 4.5 to directory godot-cpp
 - _input function for key and mouse-events
 - new command load_resource
 - new commands set_property_object and instantiate (refCounted objects are hardcoded, add missing refCounted...)
-- new commands randint, randfloat, new example node3d.nut in directory examples    
+- new commands randint, randfloat, srand and new example node3d.nut in directory examples    
   
   
   
