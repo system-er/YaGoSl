@@ -11,7 +11,7 @@ tested on windows 11.
     
   
 
-node3dexample:    
+second example node3d.nut:    
 ![Pic1](node3dexample.jpg)
 
 
