@@ -11,8 +11,8 @@ tested on windows 11.
     
   
 
-firstpic:    
-![Pic1](firstpic.jpg)
+node3dexample:    
+![Pic1](node3dexample.jpg)
 
 
 
@@ -51,7 +51,7 @@ load_resource
 // example: local tex = load_resource("res://icon.svg")    
 // and then: set_property(sprite.id, "texture", tex)    
     
-
+randint(range), randfloat(range)    
 
     
 
@@ -127,7 +127,8 @@ put godot-cpp version 4.5 to directory godot-cpp
 - new command call_method
 - _input function for key and mouse-events
 - new command load_resource
-- new commands set_property_object and instantiate (refCounted objects are hardcoded, add missing refCounted...)    
+- new commands set_property_object and instantiate (refCounted objects are hardcoded, add missing refCounted...)
+- new commands randint, randfloat, new example node3d.nut in directory examples    
   
   
   
