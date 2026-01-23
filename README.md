@@ -23,7 +23,7 @@ node = get_node(nodename) // stores the id
     
 create_node(parentnode.id, nodename) // instatiate and add_child - for example: local lbl = create_node("Label")   
 
-instantiate(node/object) // (refCounted objects are hardcoded, missing refCounted have to be added...)    
+instantiate(node/object) // (refCounted objects are hardcoded, add missing refCounted...)    
 // local mat = instantiate("StandardMaterial3D")    
     
 set_property(node.id, property, value)    
@@ -127,7 +127,7 @@ put godot-cpp version 4.5 to directory godot-cpp
 - new command call_method
 - _input function for key and mouse-events
 - new command load_resource
-- new commands set_property_object and instantiate (refCounted objects are hardcoded, missing refCounted have to be added...)    
+- new commands set_property_object and instantiate (refCounted objects are hardcoded, add missing refCounted...)    
   
   
   
