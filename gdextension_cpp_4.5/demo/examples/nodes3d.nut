@@ -27,11 +27,12 @@ function _ready() {
     local new_z = 5
     set_property(camera.id, "position", { x = new_x, y = new_y, z = new_z })
     local light = create_node(node3d.id, "DirectionalLight3D")
-    local pos = get_property(camera.id, "position")
-    local new_x = -9
-    local new_y = 2
-    local new_z = 0
+    local pos = get_property(light.id, "position")
+    local new_x = -5
+    local new_y = 3
+    local new_z = 3
     set_property(light.id, "position", { x = new_x, y = new_y, z = new_z })
+    set_property(light.id, "shadow_enabled", true)
 
     timer <- 0
 }
