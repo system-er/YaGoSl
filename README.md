@@ -52,6 +52,8 @@ load_resource
 // and then: set_property(sprite.id, "texture", tex)    
     
 randint(range), randfloat(range), srand(seed)    
+// example: srand(42)    
+// local rand = randint(100).randomnumber // integernumbers from 0 to 99    
 
     
 
