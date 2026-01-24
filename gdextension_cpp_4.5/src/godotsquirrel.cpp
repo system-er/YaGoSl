@@ -40,6 +40,11 @@ GodotSquirrel::GodotSquirrel() {
     }
     set_process(true);
     set_process_input(true);
+
+    //draw_2d = memnew(SquirrelDraw2D);
+    //add_child(draw_2d);
+    // optional
+    //draw_2d->set_z_index(1000);
 }
 
 
@@ -711,6 +716,13 @@ SQInteger squirrel_call_method(HSQUIRRELVM v) {
     return 1;
 }
 
+//void squirrel_set_draw_enabled(bool enabled) {
+//    if (draw_2d) {
+//        draw_2d->set_draw_enabled(enabled);
+//    }
+//}
+
+
 void bind_squirrel_functions(HSQUIRRELVM vm) {
     sq_pushroottable(vm);
 
@@ -732,10 +744,12 @@ void bind_squirrel_functions(HSQUIRRELVM vm) {
     bind("randint", squirrel_randint);
     bind("randfloat", squirrel_randfloat);
     bind("srand", squirrel_srand);
+    //bind("set_draw_enabled", squirrel_set_draw_enabled);
 
 
     sq_pop(vm, 1);
 }
+
 
 void GodotSquirrel::load_script(const String &stringscript) {
     UtilityFunctions::print("load_script started");
