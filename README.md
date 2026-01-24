@@ -36,6 +36,18 @@ set_property_object(object.ptr, property, value
     
 get_property(node.id, property)    
 // example: local pos = get_property(sprite.id, "position")    
+
+get_property_object(object.raw, property)    
+// example:    
+// local c = get_property_object(boxmat.raw, "albedo_color")    
+// if (typeof c == "table") {    
+//    print("r = " + c.rawget("r"))    
+//    print("g = " + c.rawget("g"))    
+//    print("b = " + c.rawget("b"))    
+//    print("a = " + c.rawget("a"))    
+// } else {    
+//    print("Kein Table, sondern: " + typeof c)    
+// }    
     
 call_method // examples:    
 // local sprite = call_method(my_node, "get_node", "Sprite2D")    
@@ -130,7 +142,8 @@ put godot-cpp version 4.5 to directory godot-cpp
 - _input function for key and mouse-events
 - new command load_resource
 - new commands set_property_object and instantiate (refCounted objects are hardcoded, add missing refCounted...)
-- new commands randint, randfloat, srand and new example node3d.nut in directory examples    
+- new commands randint, randfloat, srand and new example node3d.nut in directory examples
+- new command get_property_object    
   
   
   
