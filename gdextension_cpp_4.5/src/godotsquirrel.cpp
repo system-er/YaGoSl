@@ -41,7 +41,7 @@ GodotSquirrel::GodotSquirrel() {
     set_process(true);
     set_process_input(true);
 
-    //draw_2d = memnew(SquirrelDraw2D);
+    //raw_2d = memnew(SquirrelDraw2D);
     //add_child(draw_2d);
     // optional
     //draw_2d->set_z_index(1000);
@@ -591,6 +591,21 @@ SQInteger squirrel_get_property(HSQUIRRELVM v) {
         sq_pushstring(v, _SC("z"), -1);
         sq_pushfloat(v, vec.z);
         sq_newslot(v, -3, SQFalse);
+    } else if (value.get_type() == Variant::COLOR) {
+        Color col = value;
+        sq_newtable(v);
+        sq_pushstring(v, _SC("r"), -1);
+        sq_pushfloat(v, col.r);
+        sq_newslot(v, -3, SQFalse);
+        sq_pushstring(v, _SC("g"), -1);
+        sq_pushfloat(v, col.g);
+        sq_newslot(v, -3, SQFalse);
+        sq_pushstring(v, _SC("b"), -1);
+        sq_pushfloat(v, col.b);
+        sq_newslot(v, -3, SQFalse);
+        sq_pushstring(v, _SC("a"), -1);
+        sq_pushfloat(v, col.a);
+        sq_newslot(v, -3, SQFalse);
     } else {
 
         sq_pushstring(v, _SC("[complex type]"), -1);
@@ -598,6 +613,137 @@ SQInteger squirrel_get_property(HSQUIRRELVM v) {
 
     return 1;
 }
+
+
+Variant s_get_property_object(Object *obj, const StringName &prop) {
+    if (!obj) return Variant();
+    return obj->get(prop);
+}
+
+
+
+void add_tostring_color(HSQUIRRELVM v) {
+    sq_pushstring(v, _SC("_tostring"), -1);
+    sq_newclosure(v, [](HSQUIRRELVM v) -> SQInteger {
+        sq_pushstring(v, _SC("[Color]"), -1);
+        return 1;
+    }, 0);
+    sq_newslot(v, -3, SQFalse);
+}
+
+
+SQInteger squirrel_get_property_object(HSQUIRRELVM v) {
+    if (sq_gettop(v) < 3) {
+        return sq_throwerror(v, _SC("Expected (object_ptr, property_name)"));
+    }
+
+    SQUserPointer p = nullptr;
+    if (SQ_FAILED(sq_getuserpointer(v, 2, &p))) {
+        sq_pushnull(v);
+        return 1;
+    }
+
+    Object *obj = static_cast<Object *>(p);
+    if (!obj) {
+        sq_pushnull(v);
+        return 1;
+    }
+
+    if (!ObjectDB::get_instance(obj->get_instance_id())) {
+        sq_pushnull(v);
+        return 1;
+    }
+
+    const SQChar *prop_name = nullptr;
+    if (SQ_FAILED(sq_getstring(v, 3, &prop_name))) {
+        return sq_throwerror(v, _SC("Argument 2 must be a string"));
+    }
+
+    Variant value = obj->get(StringName(prop_name));
+
+    switch (value.get_type()) {
+
+        case Variant::NIL:
+            sq_pushnull(v);
+            break;
+
+        case Variant::BOOL:
+            sq_pushbool(v, (bool)value);
+            break;
+
+        case Variant::INT:
+            sq_pushinteger(v, (SQInteger)((int64_t)value));
+            break;
+
+        case Variant::FLOAT:
+            sq_pushfloat(v, (SQFloat)((double)value));
+            break;
+
+        case Variant::STRING: {
+            String s = value;
+            sq_pushstring(v, s.utf8().get_data(), -1);
+        } break;
+
+        case Variant::VECTOR2: {
+            Vector2 v2 = value;
+            sq_newtable(v);
+            sq_pushstring(v, "x", -1); sq_pushfloat(v, v2.x); sq_newslot(v, -3, SQFalse);
+            sq_pushstring(v, "y", -1); sq_pushfloat(v, v2.y); sq_newslot(v, -3, SQFalse);
+        } break;
+
+        case Variant::VECTOR3: {
+            Vector3 v3 = value;
+            sq_newtable(v);
+            sq_pushstring(v, "x", -1); sq_pushfloat(v, v3.x); sq_newslot(v, -3, SQFalse);
+            sq_pushstring(v, "y", -1); sq_pushfloat(v, v3.y); sq_newslot(v, -3, SQFalse);
+            sq_pushstring(v, "z", -1); sq_pushfloat(v, v3.z); sq_newslot(v, -3, SQFalse);
+        } break;
+
+        case Variant::COLOR: {
+            Color c = value;
+            sq_newtable(v);
+            sq_pushstring(v, "r", -1); sq_pushfloat(v, c.r); sq_newslot(v, -3, SQFalse);
+            sq_pushstring(v, "g", -1); sq_pushfloat(v, c.g); sq_newslot(v, -3, SQFalse);
+            sq_pushstring(v, "b", -1); sq_pushfloat(v, c.b); sq_newslot(v, -3, SQFalse);
+            sq_pushstring(v, "a", -1); sq_pushfloat(v, c.a); sq_newslot(v, -3, SQFalse);
+            add_tostring_color(v);
+        } break;
+
+        case Variant::OBJECT: {
+            Object *o = value;
+
+            if (!o || !ObjectDB::get_instance(o->get_instance_id())) {
+                sq_pushnull(v);
+                break;
+            }
+
+            if (o->is_class("RefCounted")) {
+                sq_newtable(v);
+                sq_pushstring(v, "raw", -1);
+                sq_pushuserpointer(v, o);
+                sq_newslot(v, -3, SQFalse);
+                break;
+            }
+
+            if (o->is_class("Node")) {
+                sq_newtable(v);
+                sq_pushstring(v, "id", -1);
+                sq_pushinteger(v, (SQInteger)o->get_instance_id());
+                sq_newslot(v, -3, SQFalse);
+                break;
+            }
+
+            sq_pushuserpointer(v, o);
+        } break;
+
+        default:
+            sq_pushstring(v, _SC("[unsupported Variant type]"), -1);
+            break;
+    }
+
+    return 1;
+}
+
 
 
 SQInteger squirrel_set_property(HSQUIRRELVM v) {
@@ -744,6 +890,7 @@ void bind_squirrel_functions(HSQUIRRELVM vm) {
     bind("randint", squirrel_randint);
     bind("randfloat", squirrel_randfloat);
     bind("srand", squirrel_srand);
+    bind("get_property_object", squirrel_get_property_object);
     //bind("set_draw_enabled", squirrel_set_draw_enabled);
 
 
