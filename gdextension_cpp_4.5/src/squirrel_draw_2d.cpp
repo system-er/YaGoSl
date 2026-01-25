@@ -24,7 +24,6 @@ void SquirrelDraw2D::set_draw_enabled(bool p_enabled) {
     draw_enabled = p_enabled;
 
     if (!draw_enabled) {
-        // optional: Draw-Queue leeren
         // rects.clear();
     }
 

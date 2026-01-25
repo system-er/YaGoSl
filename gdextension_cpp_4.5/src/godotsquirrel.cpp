@@ -46,7 +46,7 @@ GodotSquirrel::GodotSquirrel() {
 
 GodotSquirrel::~GodotSquirrel() {
 	if (draw_2d) {
-        memdelete(draw_2d);  // Optional, da Godot Children automatisch freigibt, aber sicherheitshalber
+        memdelete(draw_2d);
     }
     if (vm) {
         sq_close(vm);
@@ -958,11 +958,6 @@ SQInteger squirrel_set_draw_enabled(HSQUIRRELVM v) {
     return 0;
 }
 
-//void squirrel_set_draw_enabled(bool enabled) {
-//    if (draw_2d) {
-//        draw_2d->set_draw_enabled(enabled);
-//    }
-//}
 
 
 void bind_squirrel_functions(HSQUIRRELVM vm) {
