@@ -145,7 +145,7 @@ put godot-cpp version 4.5 to directory godot-cpp
 - new command load_resource
 - new commands set_property_object and instantiate (refCounted objects are hardcoded, add missing refCounted...)
 - new commands randint, randfloat, srand and new example node3d.nut in directory examples
-- new command get_property_object    
+- new command get_property_object, function _physics_process    
   
   
   
