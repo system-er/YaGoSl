@@ -4,7 +4,7 @@ integrates the Squirrel scripting language into Godot. edit your nut-files with 
 and type the name of the .nut-file in the godotsquirrel-node in inspector.      
     
 godotsquirrel is a new node for godot that inherits from Node.    
-_ready, _process, _physics_process and _input functions work in squirrel.    
+_ready, _process, _physics_process, _draw and _input functions work in squirrel.    
     
 WIP - programmed with godot 4.5, squirrel 3.2. thx to Alberto Demichelis for squirrel.
 tested on windows 11. 
@@ -67,8 +67,13 @@ randint(range), randfloat(range), srand(seed)
 // example: srand(42)    
 // local rand = randint(100).randomnumber // integernumbers from 0 to 99    
 
+draw_rect(rect, color, boolfill)    
+// example:    
+// local rect = {x = 200.0, y = 250.0, width = 400.0, height = 300.0 }    
+// local col = { r = 1.0, g = 0.0, b = 0.4, a = 0.7 }    
+// draw_rect(rect, col, true)    
     
-
+    
 # example test.nut in project demo lets the sprite fly:    
 ```
 // Squirrel Code
@@ -143,7 +148,7 @@ put godot-cpp version 4.5 to directory godot-cpp
 - new command load_resource
 - new commands set_property_object and instantiate (refCounted objects are hardcoded, add missing refCounted...)
 - new commands randint, randfloat, srand and new example node3d.nut in directory examples
-- new command get_property_object, function _physics_process    
+- new command get_property_object, function _physics_process, _draw with draw_rect        
   
   
   
