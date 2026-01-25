@@ -26,6 +26,22 @@ function _ready() {
     set_property(lbl.id, "text", "this is YaGoSl - press key or mouse to test input")
     set_property(lbl.id, "position", { x = 20, y = 20 })
     set_property(lbl.id, "scale", { x = 2.5, y = 2.5 })
+
+    local rect = {
+        x = 200.0,
+        y = 250.0,
+        width = 400.0,
+        height = 300.0
+    };
+
+    local col = {
+        r = 1.0,
+        g = 0.0,
+        b = 0.4,
+        a = 0.7
+    };
+
+    draw_rect(rect, col, true);
 }
 
 
@@ -53,5 +69,6 @@ function _input(event) {
 
     if (event.type == "mouse" && event.pressed) {
         print("mouseclick: " + event.button + " at " + event.x);
+
     }
 }
