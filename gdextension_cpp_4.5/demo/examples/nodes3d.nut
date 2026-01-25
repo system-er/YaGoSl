@@ -59,10 +59,21 @@ function SpawnBox(){
     local blue = randfloat(100).randomnumber * 0.01
     set_property_object(boxmat, "albedo_color", {r=red, g=green, b=blue, a=1.0})
     set_property(csgbox.id, "material_override", boxmat.ptr)
+    local c = get_property_object(boxmat.raw, "albedo_color")
+    if (typeof c == "table") {
+        print("r = " + c.rawget("r"))
+        print("g = " + c.rawget("g"))
+        print("b = " + c.rawget("b"))
+        print("a = " + c.rawget("a"))
+    } else {
+        print("Kein Table, sondern: " + typeof c)
+    }
+
+
 }
 
 
-function _process(delta) {
+function _physics_process(delta) {
     timer <- timer + 1
     if (timer > 60) {
         SpawnBox()
