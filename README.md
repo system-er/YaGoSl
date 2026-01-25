@@ -1,5 +1,4 @@
-# YaGoSl
-Yet another Godot Squirrel
+# YaGoSl - Yet another Godot Squirrel
 
 its a new script-language for godot. edit your nut-files with the editor of your choice    
 and type the name of the .nut-file in the godotsquirrel-node in inspector.      
