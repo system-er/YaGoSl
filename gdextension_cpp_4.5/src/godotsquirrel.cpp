@@ -936,6 +936,28 @@ SQInteger squirrel_draw_rect(HSQUIRRELVM v) {
 
     return 0;
 }
+
+
+SQInteger squirrel_draw_clear(HSQUIRRELVM v) {
+    GodotSquirrel* self = static_cast<GodotSquirrel*>(sq_getforeignptr(v));
+    if (self && self->draw_2d) {
+        self->draw_2d->clear();
+    }
+    return 0;
+}
+
+SQInteger squirrel_set_draw_enabled(HSQUIRRELVM v) {
+    SQBool enabled;
+    GodotSquirrel* self = static_cast<GodotSquirrel*>(sq_getforeignptr(v));
+    if (SQ_FAILED(sq_getbool(v, 2, &enabled))) {
+        return sq_throwerror(v, _SC("set_draw_enabled(bool) erwartet"));
+    }
+    if (self->draw_2d) {
+        self->draw_2d->set_draw_enabled(enabled == SQTrue);
+    }
+    return 0;
+}
+
 //void squirrel_set_draw_enabled(bool enabled) {
 //    if (draw_2d) {
 //        draw_2d->set_draw_enabled(enabled);
@@ -965,8 +987,9 @@ void bind_squirrel_functions(HSQUIRRELVM vm) {
     bind("randfloat", squirrel_randfloat);
     bind("srand", squirrel_srand);
     bind("get_property_object", squirrel_get_property_object);
-    //bind("set_draw_enabled", squirrel_set_draw_enabled);
+    bind("set_draw_enabled", squirrel_set_draw_enabled);
     bind("draw_rect", squirrel_draw_rect);
+    bind("draw_clear", squirrel_draw_clear);
 
 
     sq_pop(vm, 1);
