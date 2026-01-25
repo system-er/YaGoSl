@@ -41,15 +41,16 @@ GodotSquirrel::GodotSquirrel() {
     set_process(true);
     set_process_input(true);
 
-    //raw_2d = memnew(SquirrelDraw2D);
-    //add_child(draw_2d);
-    // optional
-    //draw_2d->set_z_index(1000);
 }
 
 
 GodotSquirrel::~GodotSquirrel() {
-	// Add your cleanup here.
+	if (draw_2d) {
+        memdelete(draw_2d);  // Optional, da Godot Children automatisch freigibt, aber sicherheitshalber
+    }
+    if (vm) {
+        sq_close(vm);
+    }
 }
 
 
@@ -66,6 +67,35 @@ static bool table_get_float(HSQUIRRELVM v, SQInteger idx, const char *key, SQFlo
     return false;
 }
 
+
+static bool table_to_rect2(HSQUIRRELVM v, SQInteger idx, Rect2 &out_rect) {
+    if (sq_gettype(v, idx) != OT_TABLE) return false;
+
+    SQFloat x = 0, y = 0, w = 0, h = 0;
+
+    if (!table_get_float(v, idx, "x", x))      return false;
+    if (!table_get_float(v, idx, "y", y))      return false;
+    if (!table_get_float(v, idx, "width", w))  return false;
+    if (!table_get_float(v, idx, "height", h)) return false;
+
+    out_rect = Rect2(x, y, w, h);
+    return true;
+}
+
+
+static bool table_to_color(HSQUIRRELVM v, SQInteger idx, Color &out_color) {
+    if (sq_gettype(v, idx) != OT_TABLE) return false;
+
+    SQFloat r = 0, g = 0, b = 0, a = 1.0f;
+
+    if (!table_get_float(v, idx, "r", r)) return false;
+    if (!table_get_float(v, idx, "g", g)) return false;
+    if (!table_get_float(v, idx, "b", b)) return false;
+    table_get_float(v, idx, "a", a);
+
+    out_color = Color(r, g, b, a);
+    return true;
+}
     
 static Variant squirrel_to_variant(HSQUIRRELVM v, SQInteger idx) {
     SQObjectType type = sq_gettype(v, idx);
@@ -862,6 +892,50 @@ SQInteger squirrel_call_method(HSQUIRRELVM v) {
     return 1;
 }
 
+
+SQInteger squirrel_draw_rect(HSQUIRRELVM v) {
+    SQInteger top = sq_gettop(v);
+    GodotSquirrel* self = static_cast<GodotSquirrel*>(sq_getforeignptr(v));
+    
+    if (top < 3) {
+        return sq_throwerror(v, _SC("add_rect(rect_table, color_table, [filled=true], [width=1.0])"));
+    }
+
+    Rect2 rect;
+    if (!table_to_rect2(v, 2, rect)) {
+        return sq_throwerror(v, _SC("Argument 1 must be table {x,y,width,height}"));
+    }
+
+    Color color;
+    if (!table_to_color(v, 3, color)) {
+        return sq_throwerror(v, _SC("Argument 2 must be table {r,g,b,[a]}"));
+    }
+
+    SQBool filled = SQTrue;
+    if (top >= 4) {
+        if (SQ_FAILED(sq_getbool(v, 4, &filled))) {
+            return sq_throwerror(v, _SC("Argument 3 must be bool (filled)"));
+        }
+    }
+
+    SQFloat width = 1.0f;
+    if (top >= 5) {
+        if (SQ_FAILED(sq_getfloat(v, 5, &width))) {
+            return sq_throwerror(v, _SC("Argument 4 must be number (width)"));
+        }
+    }
+
+    if (self && self->draw_2d) {
+        self->draw_2d->add_rect(rect, color, filled == SQTrue, width);
+    }
+    //if (draw_2d) {
+    //    draw_2d->add_rect(rect, color, filled == SQTrue, width);
+    //} else {
+    //    UtilityFunctions::printerr("Squirrel add_rect: draw_2d is null!");
+    //}
+
+    return 0;
+}
 //void squirrel_set_draw_enabled(bool enabled) {
 //    if (draw_2d) {
 //        draw_2d->set_draw_enabled(enabled);
@@ -892,6 +966,7 @@ void bind_squirrel_functions(HSQUIRRELVM vm) {
     bind("srand", squirrel_srand);
     bind("get_property_object", squirrel_get_property_object);
     //bind("set_draw_enabled", squirrel_set_draw_enabled);
+    bind("draw_rect", squirrel_draw_rect);
 
 
     sq_pop(vm, 1);
@@ -929,6 +1004,16 @@ void GodotSquirrel::load_script(const String &stringscript) {
 
 void GodotSquirrel::_ready() {
     UtilityFunctions::print("GodotSquirrel _ready called");
+    sq_setforeignptr(vm, this);
+    if (draw_2d == nullptr) {
+        draw_2d = memnew(SquirrelDraw2D);
+        add_child(draw_2d);
+        draw_2d->set_name("SquirrelDraw2D");
+        draw_2d->set_z_index(1000);
+        draw_2d->set_draw_enabled(true);
+        UtilityFunctions::print("SquirrelDraw2D added as child in _ready()");
+    }
+
 
     if (!vm) {
         UtilityFunctions::printerr("_ready error: no vm");

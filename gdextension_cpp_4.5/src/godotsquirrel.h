@@ -20,7 +20,7 @@ private:
 	String script_source;
 	String script_path;
     bool ready_called = false;
-	SquirrelDraw2D *draw_2d = nullptr;
+	
 
 protected:
 	static void _bind_methods();
@@ -38,7 +38,7 @@ public:
 	void set_script_path(const String &p_path);
     String get_script_path() const;
 	void update_debug_draw();
-
+	SquirrelDraw2D *draw_2d = nullptr;	
 
 };
 

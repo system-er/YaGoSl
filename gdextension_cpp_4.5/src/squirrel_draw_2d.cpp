@@ -10,7 +10,7 @@ void SquirrelDraw2D::_bind_methods() {
         D_METHOD("add_rect", "rect", "color", "filled", "width"),
         &SquirrelDraw2D::add_rect
     );
-    ClassDB::bind_method(D_METHOD("_draw"), &SquirrelDraw2D::_draw);
+    //ClassDB::bind_method(D_METHOD("_draw"), &SquirrelDraw2D::_draw);
 }
 
 SquirrelDraw2D::SquirrelDraw2D() {

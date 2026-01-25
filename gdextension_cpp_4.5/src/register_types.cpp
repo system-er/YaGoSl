@@ -16,6 +16,7 @@ void initialize_godotsquirrel_module(ModuleInitializationLevel p_level) {
 	}
 
 	GDREGISTER_RUNTIME_CLASS(GodotSquirrel);
+	GDREGISTER_RUNTIME_CLASS(SquirrelDraw2D);
 }
 
 void uninitialize_godotsquirrel_module(ModuleInitializationLevel p_level) {
