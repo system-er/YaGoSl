@@ -66,10 +66,10 @@ load_resource
 randint(range), randfloat(range), srand(seed)    
 // example: srand(42)    
 // local rand = randint(100).randomnumber // integernumbers from 0 to 99    
-
+    
+    
 // NO _draw-Function! instead of gdscript the draw-methods work in _ready and so on, too. you need no _draw-fuction!
 draw_clear()    
-
 draw_rect(rect, color, boolfill)    
 // example:    
 // local rect = {x = 200.0, y = 250.0, width = 400.0, height = 300.0 }    
