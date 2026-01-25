@@ -67,6 +67,8 @@ randint(range), randfloat(range), srand(seed)
 // example: srand(42)    
 // local rand = randint(100).randomnumber // integernumbers from 0 to 99    
 
+draw_clear()    
+
 draw_rect(rect, color, boolfill)    
 // example:    
 // local rect = {x = 200.0, y = 250.0, width = 400.0, height = 300.0 }    
@@ -148,7 +150,7 @@ put godot-cpp version 4.5 to directory godot-cpp
 - new command load_resource
 - new commands set_property_object and instantiate (refCounted objects are hardcoded, add missing refCounted...)
 - new commands randint, randfloat, srand and new example node3d.nut in directory examples
-- new command get_property_object, function _physics_process, _draw with draw_rect        
+- new command get_property_object, function _physics_process, _draw with draw_rect, draw_clear          
   
   
   
