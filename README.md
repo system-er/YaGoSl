@@ -72,7 +72,7 @@ randint(range), randfloat(range), srand(seed)
 draw_clear()    
 draw_rect(rect, color, boolfill)    
 // example:    
-// local rect = {x = 200.0, y = 250.0, width = 400.0, height = 300.0 }    
+// local rect = { x = 200.0, y = 250.0, width = 400.0, height = 300.0 }    
 // local col = { r = 1.0, g = 0.0, b = 0.4, a = 0.7 }    
 // draw_rect(rect, col, true)    
     
