@@ -1,6 +1,6 @@
 # YaGoSl - Yet another Godot Squirrel
 
-a new script-language for godot. edit your nut-files with the editor of your choice    
+integrates the Squirrel scripting language into Godot. edit your nut-files with the editor of your choice    
 and type the name of the .nut-file in the godotsquirrel-node in inspector.      
     
 godotsquirrel is a new node for godot that inherits from Node.    
