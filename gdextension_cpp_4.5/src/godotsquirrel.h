@@ -31,6 +31,7 @@ public:
 	~GodotSquirrel();
 	void _ready() override;
 	void _process(double delta) override;
+	void _physics_process(double delta) override;
 	void _input(const Ref<InputEvent> &event) override;
 	void set_script(const String &p_script);
 	void load_script(const String &code);

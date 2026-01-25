@@ -970,6 +970,26 @@ void GodotSquirrel::_process(double delta) {
     sq_pop(vm, 1);
 }
 
+void GodotSquirrel::_physics_process(double delta) {
+    if (!vm) return;
+
+    sq_pushroottable(vm);              // 1. Stack: [root]
+    sq_pushstring(vm, _SC("_physics_process"), -1); // 2. Stack: [root, "_process"]
+
+    if (SQ_SUCCEEDED(sq_get(vm, -2))) { // 3. Stack: [root, function]
+        
+        sq_pushroottable(vm);
+        sq_pushfloat(vm, (SQFloat)delta);
+
+        if (SQ_FAILED(sq_call(vm, 2, SQFalse, SQTrue))) {
+            UtilityFunctions::printerr("Squirrel runtime error in _physics_process (check if _physics_process(delta) is defined)");
+        }
+        
+        sq_pop(vm, 1);
+    }
+
+    sq_pop(vm, 1);
+}
 
 void GodotSquirrel::_input(const Ref<InputEvent> &event) {
     if (vm == nullptr || event.is_null()) return;
