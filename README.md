@@ -6,7 +6,7 @@ and type the name of the .nut-file in the godotsquirrel-node in inspector.
     
 godotsquirrel is a new node for godot that inherits from Node.    
 the advantages of YaGoSl are that _ready, _process, _physics_process    
-and _input functions work in squirrel. see the flying sprite on screen!   
+and _input functions work in squirrel.    
     
 WIP - programmed with godot 4.5, squirrel 3.2. thx to Alberto Demichelis for squirrel.
 tested on windows 11. 
