@@ -68,7 +68,7 @@ randint(range), randfloat(range), srand(seed)
 // local rand = randint(100).randomnumber // integernumbers from 0 to 99    
     
     
-// NO _draw-function! instead of gdscript the draw-methods work in _ready and so on, too. you need no _draw-function!    
+// NO _draw-function! instead of gdscript the draw-methods work in _ready and so on, too.        
 draw_clear()    
 draw_rect(rect, color, boolfill)    
 // example:    
