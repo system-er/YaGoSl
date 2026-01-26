@@ -154,7 +154,7 @@ put godot-cpp version 4.5 to directory godot-cpp
 - new commands randint, randfloat, srand and new example node3d.nut in directory examples
 - new command get_property_object, function _physics_process    
 - draw_rect, draw_clear - theres no _draw-function cause the draw-commands work everywhere...    
-- now the stdlibs of squirrel should work, for example local result = math.sqrt(4)    
+- now the standardlibraries of squirrel should work, for example: local result = math.sqrt(4)    
   
   
   
