@@ -5,6 +5,10 @@
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/input_event.hpp>
 #include <squirrel-3.2/include/squirrel.h>
+#include <squirrel-3.2/include/sqstdio.h>
+#include <squirrel-3.2/include/sqstdblob.h>
+#include <squirrel-3.2/include/sqstdstring.h>
+#include <squirrel-3.2/include/sqstdsystem.h>
 #include <squirrel-3.2/include/sqstdmath.h>
 #include "squirrel_draw_2d.h"
 

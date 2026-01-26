@@ -38,6 +38,36 @@ GodotSquirrel::GodotSquirrel() {
     if (!vm) {
         UtilityFunctions::printerr("VM not initialized!");
     }
+    //sq_pushroottable(vm);
+    //sq_pushstring(vm, _SC("math"), -1);
+    //sq_newtable(vm);                 
+    //sqstd_register_mathlib(vm);
+    //sq_newslot(vm, -3, SQFalse);
+    //sq_pop(vm, 1);   
+
+    auto register_stdlib = [&](const char* lib_name, SQRESULT (*reg_func)(HSQUIRRELVM)) {
+        sq_pushroottable(vm);
+        sq_pushstring(vm, _SC(lib_name), -1);
+        sq_newtable(vm);
+        reg_func(vm);
+        sq_newslot(vm, -3, SQFalse);
+        sq_pop(vm, 1);
+    };
+
+    register_stdlib("blob",    sqstd_register_bloblib);
+    register_stdlib("io",      sqstd_register_iolib);
+    register_stdlib("math",    sqstd_register_mathlib);
+    register_stdlib("string",  sqstd_register_stringlib);
+    register_stdlib("system",  sqstd_register_systemlib);
+
+    sq_pushroottable(vm);
+    sq_pushstring(vm, _SC("math"), -1);
+    if (SQ_SUCCEEDED(sq_get(vm, -2))) {
+        UtilityFunctions::print("stdlib math registered successfully");
+    }
+    sq_pop(vm, 2);
+
+
     set_process(true);
     set_process_input(true);
 
@@ -1013,6 +1043,7 @@ void GodotSquirrel::load_script(const String &stringscript) {
     // Initial call: Closure + root table as this
     sq_push(vm, -1);          // closure
     sq_pushroottable(vm);     // this
+
     if (SQ_FAILED(sq_call(vm, 1, SQFalse, SQTrue))) {
         UtilityFunctions::printerr("squirrel runtime error (initial call)");
     }
