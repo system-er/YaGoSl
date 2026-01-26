@@ -1,15 +1,13 @@
 # YaGoSl - Yet another Godot Squirrel
 
 integrates the Squirrel scripting language into Godot with gdextension c++.     
-edit your nut-files with the editor of your choice   
-(for example i use Visual Studio Code for Windows - for VSCode exist extensions for squirrelcode...)    
+edit your nut-files with the editor of your choice     
 and type the name of the .nut-file in the godotsquirrel-node in inspector.      
     
 godotsquirrel is a new node for godot that inherits from Node.    
 _ready, _process, _physics_process and _input functions work in squirrel.    
     
-WIP - programmed with godot 4.5, squirrel 3.2. thx to Alberto Demichelis for squirrel.
-tested on windows 11. 
+WIP - programmed with godot 4.5, squirrel 3.2. thx to Alberto Demichelis for squirrel.    
     
   
 
