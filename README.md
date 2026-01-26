@@ -1,7 +1,7 @@
 # YaGoSl - Yet another Godot Squirrel
 
 integrates the Squirrel scripting language into Godot. edit your nut-files with the editor of your choice   
-(for example i use Visual Code for Windows - there are extensions for squirrelcode...)    
+(for example i use Visual Studio Code for Windows - for VSCode exist extensions for squirrelcode...)    
 and type the name of the .nut-file in the godotsquirrel-node in inspector.      
     
 godotsquirrel is a new node for godot that inherits from Node.    
