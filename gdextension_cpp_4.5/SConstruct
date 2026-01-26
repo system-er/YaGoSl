@@ -14,10 +14,23 @@ env.Append(CPPPATH=['src/squirrel-3.2/include'])
 # - CPPDEFINES are for pre-processor defines
 # - LINKFLAGS are for linking flags
 
+sqstdlib_sources = [
+#    "src/squirrel-3.2/sqstdlib/sqstd_aux.cpp",
+    "src/squirrel-3.2/sqstdlib/sqstd_math.cpp",
+    "src/squirrel-3.2/sqstdlib/sqstd_string.cpp",
+    "src/squirrel-3.2/sqstdlib/sqstd_system.cpp",
+    "src/squirrel-3.2/sqstdlib/sqstd_io.cpp",
+    "src/squirrel-3.2/sqstdlib/sqstd_blob.cpp",
+]
+
+
+
 # tweak this if you want to use different folders, or more folders, to store your source code in.
 env.Append(CPPPATH=["src/"])
 sources = Glob("src/*.cpp")
 sources += Glob("src/squirrel-3.2/squirrel/*.cpp")
+sources += Glob("src/squirrel-3.2/sqstdlib/*.cpp")
+
 
 
 if env["platform"] == "macos":
