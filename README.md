@@ -153,10 +153,11 @@ start scons
 - new command load_resource
 - new commands set_property_object and instantiate (refCounted objects are hardcoded, add missing refCounted...)
 - new commands randint, randfloat, srand and new example node3d.nut in directory examples
+- new command draw_circle
 - new command get_property_object, function _physics_process    
 - draw_rect, draw_clear - theres no _draw-function cause the draw-commands work everywhere...    
 - now the standardlibraries of squirrel should work, for example: local result = math.sqrt(4)    
-  
+- new command draw_circle    
   
   
   
