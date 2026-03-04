@@ -75,8 +75,9 @@ draw_rect(rect, color, boolfill)
 // local rect = { x = 200.0, y = 250.0, width = 400.0, height = 300.0 }    
 // local col = { r = 1.0, g = 0.0, b = 0.4, a = 0.7 }    
 // draw_rect(rect, col, true)    
-    
-    
+// draw_circle(center, col, radius, [filled], [width])    
+// filled circle: draw_circle({x=400, y=300}, {r=1, g=0, b=0, a=1}, 50);    
+     
 # example test.nut in project demo lets the sprite fly:    
 ```
 // Squirrel Code
