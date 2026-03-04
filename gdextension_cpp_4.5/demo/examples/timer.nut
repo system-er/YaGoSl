@@ -6,5 +6,6 @@ function _process(delta) {
     local y = 300 + math.cos(time * 1.5) * 100;
 
     draw_clear();
-    draw_rect({x=x, y=y, width=50, height=50}, {r=0, g=0.5, b=1, a=1}, true);
+    //draw_rect({x=x, y=y, width=50, height=50}, {r=0, g=0.5, b=1, a=1}, true);
+	draw_circle({x=x, y=y}, {r=1, g=0.5, b=1, a=1}, 50);
 }
