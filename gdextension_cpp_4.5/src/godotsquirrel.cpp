@@ -509,7 +509,7 @@ SQInteger squirrel_instantiate(HSQUIRRELVM v) {
                     return 1;
                 } else {
                     sq_poptop(v);
-                    return sq_throwerror(v, _SC("Failed to instantiate StandardMaterial3D"));
+                    return sq_throwerror(v, _SC("Failed to instantiate BoxShape3D"));
                 }
             }
             else {
@@ -626,7 +626,7 @@ SQInteger squirrel_randfloat(HSQUIRRELVM v) {
         return sq_throwerror(v, _SC("error randfloat(range)"));
     }
     
-    float randomNum = rand() % range;
+    float randomNum = ((float)rand() / (float)RAND_MAX) * (float)range;
 
     sq_newtable(v);
     sq_pushstring(v, _SC("randomnumber"), -1);
