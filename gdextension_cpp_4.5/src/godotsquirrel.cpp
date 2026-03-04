@@ -1028,6 +1028,52 @@ SQInteger squirrel_draw_clear(HSQUIRRELVM v) {
     return 0;
 }
 
+SQInteger squirrel_draw_circle(HSQUIRRELVM v) {
+    SQInteger top = sq_gettop(v);
+    GodotSquirrel* self = static_cast<GodotSquirrel*>(sq_getforeignptr(v));
+    
+    if (top < 3) {
+        return sq_throwerror(v, _SC("draw_circle(center_table, color_table, radius, [filled=true], [width=1.0])"));
+    }
+
+    Vector2 center;
+    if (!squirrel_table_to_vector2(v, 2, center)) {
+        return sq_throwerror(v, _SC("Argument 1 must be table {x, y}"));
+    }
+
+    Color color;
+    if (!table_to_color(v, 3, color)) {
+        return sq_throwerror(v, _SC("Argument 2 must be table {r,g,b,[a]}"));
+    }
+
+    SQFloat radius = 10.0f;
+    if (top >= 4) {
+        if (SQ_FAILED(sq_getfloat(v, 4, &radius))) {
+            return sq_throwerror(v, _SC("Argument 3 must be number (radius)"));
+        }
+    }
+
+    SQBool filled = SQTrue;
+    if (top >= 5) {
+        if (SQ_FAILED(sq_getbool(v, 5, &filled))) {
+            return sq_throwerror(v, _SC("Argument 4 must be bool (filled)"));
+        }
+    }
+
+    SQFloat width = 1.0f;
+    if (top >= 6) {
+        if (SQ_FAILED(sq_getfloat(v, 6, &width))) {
+            return sq_throwerror(v, _SC("Argument 5 must be number (width)"));
+        }
+    }
+
+    if (self && self->draw_2d) {
+        self->draw_2d->add_circle(center, radius, color, filled == SQTrue, width);
+    }
+
+    return 0;
+}
+
 SQInteger squirrel_set_draw_enabled(HSQUIRRELVM v) {
     SQBool enabled;
     GodotSquirrel* self = static_cast<GodotSquirrel*>(sq_getforeignptr(v));
@@ -1066,6 +1112,7 @@ void bind_squirrel_functions(HSQUIRRELVM vm) {
     bind("get_property_object", squirrel_get_property_object);
     bind("set_draw_enabled", squirrel_set_draw_enabled);
     bind("draw_rect", squirrel_draw_rect);
+    bind("draw_circle", squirrel_draw_circle);
     bind("draw_clear", squirrel_draw_clear);
 
 

@@ -36,6 +36,7 @@ bool SquirrelDraw2D::is_draw_enabled() const {
 
 void SquirrelDraw2D::clear() {
     rects.clear();
+    circles.clear();
     queue_redraw();
 }
 
@@ -53,10 +54,30 @@ void SquirrelDraw2D::add_rect(const Rect2 &rect,
     queue_redraw();
 }
 
+void SquirrelDraw2D::add_circle(const Vector2 &center,
+                                float radius,
+                                const Color &color,
+                                bool filled,
+                                float width) {
+    DrawCircle c;
+    c.center = center;
+    c.radius = radius;
+    c.color = color;
+    c.filled = filled;
+    c.width = width;
+
+    circles.push_back(c);
+    queue_redraw();
+}
+
 void SquirrelDraw2D::_draw() {
     for (int i = 0; i < rects.size(); i++) {
         const DrawRect &r = rects[i];
         draw_rect(r.rect, r.color, r.filled, r.width);
+    }
+    for (int i = 0; i < circles.size(); i++) {
+        const DrawCircle &c = circles[i];
+        draw_circle(c.center, c.radius, c.color, c.filled, c.width);
     }
 }
 

@@ -24,6 +24,11 @@ public:
                   const Color &color,
                   bool filled = true,
                   float width = 1.0);
+    void add_circle(const Vector2 &center,
+                    float radius,
+                    const Color &color,
+                    bool filled = true,
+                    float width = 1.0);
 
 private:
     bool draw_enabled = true;
@@ -35,7 +40,16 @@ private:
         float width;
     };
 
+    struct DrawCircle {
+        Vector2 center;
+        float radius;
+        Color color;
+        bool filled;
+        float width;
+    };
+
     Vector<DrawRect> rects;
+    Vector<DrawCircle> circles;
 };
 
 #endif
