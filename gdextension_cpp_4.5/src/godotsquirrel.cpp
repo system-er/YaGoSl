@@ -1,6 +1,9 @@
 #include "godotsquirrel.h"
 #include <iostream>
 #include <cstdlib>
+#include <vector>
+#include <mutex>
+#include <algorithm>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/String.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
@@ -29,6 +32,27 @@
 
 
 using namespace godot;
+
+struct SquirrelGodotRef {
+    Ref<RefCounted> ref;
+    ~SquirrelGodotRef() {}
+};
+
+static std::vector<SquirrelGodotRef*> g_wrapper_refs;
+static std::mutex g_wrapper_mutex;
+
+static SQInteger release_wrapper(SQUserPointer p, SQInteger size) {
+    SquirrelGodotRef* wrapper = static_cast<SquirrelGodotRef*>(p);
+    if (wrapper) {
+        std::lock_guard<std::mutex> lock(g_wrapper_mutex);
+        auto it = std::find(g_wrapper_refs.begin(), g_wrapper_refs.end(), wrapper);
+        if (it != g_wrapper_refs.end()) {
+            g_wrapper_refs.erase(it);
+        }
+        memdelete(wrapper);
+    }
+    return 0;
+}
 
 
 
@@ -75,9 +99,18 @@ GodotSquirrel::GodotSquirrel() {
 
 
 GodotSquirrel::~GodotSquirrel() {
-	if (draw_2d) {
+    if (draw_2d) {
         memdelete(draw_2d);
     }
+    
+    {
+        std::lock_guard<std::mutex> lock(g_wrapper_mutex);
+        for (SquirrelGodotRef* wrapper : g_wrapper_refs) {
+            memdelete(wrapper);
+        }
+        g_wrapper_refs.clear();
+    }
+    
     if (vm) {
         sq_close(vm);
     }
@@ -297,8 +330,19 @@ SQInteger squirrel_load_resource(HSQUIRRELVM v) {
         }
         
         if (res.is_valid()) {
+            SquirrelGodotRef* wrapper = memnew(SquirrelGodotRef);
+            wrapper->ref = res;
+            
+            {
+                std::lock_guard<std::mutex> lock(g_wrapper_mutex);
+                g_wrapper_refs.push_back(wrapper);
+            }
+
             push_godot_object_to_squirrel(v, res.ptr());
-            res->reference(); 
+            sq_pushstring(v, _SC("wrapper"), -1);
+            sq_pushuserpointer(v, wrapper);
+            sq_newslot(v, -3, SQFalse);
+            
             return 1;
         }
     }
@@ -357,13 +401,6 @@ SQInteger squirrel_get_node(HSQUIRRELVM v) {
 
 
 
-struct SquirrelGodotRef {
-    Ref<RefCounted> ref;
-    ~SquirrelGodotRef() {}
-};
-
-
-
 SQInteger squirrel_instantiate(HSQUIRRELVM v) {
     const SQChar* classname = nullptr;
     if (SQ_FAILED(sq_getstring(v, 2, &classname)) || !classname || classname[0] == '\0') {
@@ -389,6 +426,11 @@ SQInteger squirrel_instantiate(HSQUIRRELVM v) {
                 if (mesh.is_valid()) {
                     SquirrelGodotRef* wrapper = memnew(SquirrelGodotRef);
                     wrapper->ref = mesh;
+
+                    {
+                        std::lock_guard<std::mutex> lock(g_wrapper_mutex);
+                        g_wrapper_refs.push_back(wrapper);
+                    }
 
                     sq_pushstring(v, _SC("ptr"), -1);
                     sq_pushuserpointer(v, wrapper);
@@ -416,6 +458,11 @@ SQInteger squirrel_instantiate(HSQUIRRELVM v) {
                     SquirrelGodotRef* wrapper = memnew(SquirrelGodotRef);
                     wrapper->ref = mat;
 
+                    {
+                        std::lock_guard<std::mutex> lock(g_wrapper_mutex);
+                        g_wrapper_refs.push_back(wrapper);
+                    }
+
                     sq_pushstring(v, _SC("ptr"), -1);
                     sq_pushuserpointer(v, wrapper);
                     sq_newslot(v, -3, SQFalse);
@@ -441,6 +488,11 @@ SQInteger squirrel_instantiate(HSQUIRRELVM v) {
                 if (box.is_valid()) {
                     SquirrelGodotRef* wrapper = memnew(SquirrelGodotRef);
                     wrapper->ref = box;
+
+                    {
+                        std::lock_guard<std::mutex> lock(g_wrapper_mutex);
+                        g_wrapper_refs.push_back(wrapper);
+                    }
 
                     sq_pushstring(v, _SC("ptr"), -1);
                     sq_pushuserpointer(v, wrapper);
@@ -571,14 +623,14 @@ SQInteger squirrel_randfloat(HSQUIRRELVM v) {
     SQInteger range;
 
     if (SQ_FAILED(sq_getinteger(v, 2, &range)))  {
-        return sq_throwerror(v, _SC("error randint(range)"));
+        return sq_throwerror(v, _SC("error randfloat(range)"));
     }
     
     float randomNum = rand() % range;
 
     sq_newtable(v);
     sq_pushstring(v, _SC("randomnumber"), -1);
-    sq_pushinteger(v, (SQFloat)randomNum);
+    sq_pushfloat(v, (SQFloat)randomNum);
     sq_newslot(v, -3, SQFalse);
 
     return 1;
