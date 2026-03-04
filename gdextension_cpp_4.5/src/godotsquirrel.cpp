@@ -41,6 +41,13 @@ struct SquirrelGodotRef {
 static std::vector<SquirrelGodotRef*> g_wrapper_refs;
 static std::mutex g_wrapper_mutex;
 
+struct ConnectionInfo {
+    uint64_t object_id;
+    StringName signal_name;
+    String squirrel_func;
+};
+static std::vector<ConnectionInfo> g_connections;
+
 static SQInteger release_wrapper(SQUserPointer p, SQInteger size) {
     SquirrelGodotRef* wrapper = static_cast<SquirrelGodotRef*>(p);
     if (wrapper) {
@@ -1074,6 +1081,42 @@ SQInteger squirrel_draw_circle(HSQUIRRELVM v) {
     return 0;
 }
 
+SQInteger squirrel_connect(HSQUIRRELVM v) {
+    SQInteger top = sq_gettop(v);
+    
+    if (top < 4) {
+        return sq_throwerror(v, _SC("connect(object, signal_name, callback_func)"));
+    }
+
+    SQUserPointer ptr = nullptr;
+    sq_getuserpointer(v, 2, &ptr);
+    Object* obj = static_cast<Object*>(ptr);
+    
+    if (!obj) {
+        sq_pushbool(v, SQFalse);
+        return 1;
+    }
+
+    const SQChar* signal_name = nullptr;
+    sq_getstring(v, 3, &signal_name);
+    
+    const SQChar* callback_name = nullptr;
+    sq_getstring(v, 4, &callback_name);
+    
+    if (!signal_name || !callback_name) {
+        return sq_throwerror(v, _SC("signal_name and callback_func must be strings"));
+    }
+
+    ConnectionInfo conn;
+    conn.object_id = obj->get_instance_id();
+    conn.signal_name = StringName(signal_name);
+    conn.squirrel_func = String(callback_name);
+    g_connections.push_back(conn);
+    
+    sq_pushbool(v, SQTrue);
+    return 1;
+}
+
 SQInteger squirrel_set_draw_enabled(HSQUIRRELVM v) {
     SQBool enabled;
     GodotSquirrel* self = static_cast<GodotSquirrel*>(sq_getforeignptr(v));
@@ -1114,6 +1157,7 @@ void bind_squirrel_functions(HSQUIRRELVM vm) {
     bind("draw_rect", squirrel_draw_rect);
     bind("draw_circle", squirrel_draw_circle);
     bind("draw_clear", squirrel_draw_clear);
+    bind("connect", squirrel_connect);
 
 
     sq_pop(vm, 1);
@@ -1135,7 +1179,41 @@ void GodotSquirrel::load_script(const String &stringscript) {
     const char *script = utf8.get_data();
 
     if (SQ_FAILED(sq_compilebuffer(vm, script, strlen(script), "script", SQTrue))) {
-        UtilityFunctions::printerr("squirrel compile error");
+        sq_getlasterror(vm);
+        
+        String err_msg = "unknown error";
+        SQInteger err_line = -1;
+        
+        if (sq_gettype(vm, -1) == OT_STRING) {
+            const SQChar* msg = nullptr;
+            sq_getstring(vm, -1, &msg);
+            err_msg = String(msg);
+        } else if (sq_gettype(vm, -1) == OT_TABLE) {
+            sq_pushstring(vm, _SC("_message"), -1);
+            if (SQ_SUCCEEDED(sq_get(vm, -2))) {
+                const SQChar* msg = nullptr;
+                sq_getstring(vm, -1, &msg);
+                err_msg = String(msg);
+                sq_pop(vm, 1);
+            }
+            sq_pushstring(vm, _SC("_line"), -1);
+            if (SQ_SUCCEEDED(sq_get(vm, -2))) {
+                sq_getinteger(vm, -1, &err_line);
+                sq_pop(vm, 1);
+            }
+            sq_pushstring(vm, _SC("_column"), -1);
+            if (SQ_SUCCEEDED(sq_get(vm, -2))) {
+                SQInteger col = -1;
+                sq_getinteger(vm, -1, &col);
+                if (err_line > 0) err_msg = err_msg + " (col " + String::num(col) + ")";
+                sq_pop(vm, 1);
+            }
+        }
+        
+        UtilityFunctions::printerr("Squirrel compile error",
+            err_line > 0 ? String(" (line ") + String::num(err_line) + ")" : "", 
+            ": ", err_msg);
+        sq_pop(vm, 1);
         return;
     }
     
