@@ -14,6 +14,7 @@
 #include <godot_cpp/classes/node2d.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/texture2d.hpp>
+#include <cstdio>
 #include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/variant/vector2.hpp>
 #include <godot_cpp/variant/vector3.hpp>
@@ -63,12 +64,66 @@ static SQInteger release_wrapper(SQUserPointer p, SQInteger size) {
 
 
 
+static void squirrel_compiler_error(HSQUIRRELVM v, const SQChar *sErr, const SQChar *sSource, SQInteger line, SQInteger column) {
+    String source_str = sSource ? String(sSource) : String("script");
+    String err_str = sErr ? String(sErr) : String("unknown error");
+    UtilityFunctions::printerr("Squirrel compile error at ", source_str, ":line ", line, " - ", err_str);
+}
+
+static SQInteger squirrel_error_handler(HSQUIRRELVM v) {
+    SQInteger top = sq_gettop(v);
+    if (top >= 1) {
+        const SQChar *err_msg = nullptr;
+        if (SQ_SUCCEEDED(sq_getstring(v, 2, &err_msg))) {
+            String err_str = err_msg ? String(err_msg) : String("unknown error");
+
+            SQStackInfos si;
+            bool has_location = false;
+            String location;
+            for (SQInteger lvl = 1; lvl < 32; ++lvl) {
+                if (SQ_SUCCEEDED(sq_stackinfos(v, lvl, &si))) {
+                    if (si.source != nullptr || si.line >= 0 || (si.funcname != nullptr && si.funcname[0] != '\0')) {
+                        if (si.source != nullptr) {
+                            location = String(si.source);
+                        }
+                        if (si.line >= 0) {
+                            char linebuf[16];
+                            std::snprintf(linebuf, sizeof(linebuf), "%d", (int)si.line);
+                            location = location + ":" + String(linebuf);
+                        }
+                        if (si.funcname != nullptr && si.funcname[0] != '\0') {
+                            location = location + String(" in ") + String(si.funcname);
+                        }
+                        has_location = true;
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            if (has_location) {
+                UtilityFunctions::printerr("Squirrel error at ", location, " - ", err_str);
+            } else {
+                UtilityFunctions::printerr("Squirrel error: ", err_str);
+            }
+        }
+    }
+    return 0;
+}
+
+
 GodotSquirrel::GodotSquirrel() {
     UtilityFunctions::print("C++ constructor called");
     vm = sq_open(1024);
     if (!vm) {
         UtilityFunctions::printerr("VM not initialized!");
     }
+    sq_enabledebuginfo(vm, SQTrue);
+
+    sq_setcompilererrorhandler(vm, squirrel_compiler_error);
+    sq_newclosure(vm, squirrel_error_handler, 0);
+    sq_seterrorhandler(vm);
     //sq_pushroottable(vm);
     //sq_pushstring(vm, _SC("math"), -1);
     //sq_newtable(vm);                 
@@ -1177,42 +1232,15 @@ void GodotSquirrel::load_script(const String &stringscript) {
     sq_pop(vm, 1); // root
     CharString utf8 = stringscript.utf8();
     const char *script = utf8.get_data();
+    // Prefer using the actual script path as the source name for better error location in stackinfos
+    CharString sourcename_utf8;
+    const char* sourcename = "script";
+    if (!script_path.is_empty()) {
+        sourcename_utf8 = script_path.utf8();
+        sourcename = sourcename_utf8.get_data();
+    }
 
-    if (SQ_FAILED(sq_compilebuffer(vm, script, strlen(script), "script", SQTrue))) {
-        sq_getlasterror(vm);
-        
-        String err_msg = "unknown error";
-        SQInteger err_line = -1;
-        
-        if (sq_gettype(vm, -1) == OT_STRING) {
-            const SQChar* msg = nullptr;
-            sq_getstring(vm, -1, &msg);
-            err_msg = String(msg);
-        } else if (sq_gettype(vm, -1) == OT_TABLE) {
-            sq_pushstring(vm, _SC("_message"), -1);
-            if (SQ_SUCCEEDED(sq_get(vm, -2))) {
-                const SQChar* msg = nullptr;
-                sq_getstring(vm, -1, &msg);
-                err_msg = String(msg);
-                sq_pop(vm, 1);
-            }
-            sq_pushstring(vm, _SC("_line"), -1);
-            if (SQ_SUCCEEDED(sq_get(vm, -2))) {
-                sq_getinteger(vm, -1, &err_line);
-                sq_pop(vm, 1);
-            }
-            sq_pushstring(vm, _SC("_column"), -1);
-            if (SQ_SUCCEEDED(sq_get(vm, -2))) {
-                SQInteger col = -1;
-                sq_getinteger(vm, -1, &col);
-                if (err_line > 0) err_msg = err_msg + " (col " + String::num(col) + ")";
-                sq_pop(vm, 1);
-            }
-        }
-        
-        UtilityFunctions::printerr("Squirrel compile error",
-            err_line > 0 ? String(" (line ") + String::num(err_line) + ")" : "", 
-            ": ", err_msg);
+    if (SQ_FAILED(sq_compilebuffer(vm, script, strlen(script), sourcename, SQTrue))) {
         sq_pop(vm, 1);
         return;
     }
@@ -1222,7 +1250,7 @@ void GodotSquirrel::load_script(const String &stringscript) {
     sq_pushroottable(vm);     // this
 
     if (SQ_FAILED(sq_call(vm, 1, SQFalse, SQTrue))) {
-        UtilityFunctions::printerr("squirrel runtime error (initial call)");
+        sq_pop(vm, 1);
     }
     sq_pop(vm, 1);            // pop closure
     sq_settop(vm, 0);         // Stack sauber
