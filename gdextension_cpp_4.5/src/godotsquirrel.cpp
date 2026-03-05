@@ -5,6 +5,7 @@
 #include <mutex>
 #include <algorithm>
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/variant/String.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/classes/engine.hpp>
@@ -42,12 +43,13 @@ struct SquirrelGodotRef {
 static std::vector<SquirrelGodotRef*> g_wrapper_refs;
 static std::mutex g_wrapper_mutex;
 
-struct ConnectionInfo {
-    uint64_t object_id;
-    StringName signal_name;
-    String squirrel_func;
-};
-static std::vector<ConnectionInfo> g_connections;
+// Veraltet - wird durch signal_connections in GodotSquirrel ersetzt
+// struct ConnectionInfo {
+//     uint64_t object_id;
+//     StringName signal_name;
+//     String squirrel_func;
+// };
+// static std::vector<ConnectionInfo> g_connections;
 
 static SQInteger release_wrapper(SQUserPointer p, SQInteger size) {
     SquirrelGodotRef* wrapper = static_cast<SquirrelGodotRef*>(p);
@@ -161,6 +163,8 @@ GodotSquirrel::GodotSquirrel() {
 
 
 GodotSquirrel::~GodotSquirrel() {
+    disconnect_all_signals();
+    
     if (draw_2d) {
         memdelete(draw_2d);
     }
@@ -1143,9 +1147,29 @@ SQInteger squirrel_connect(HSQUIRRELVM v) {
         return sq_throwerror(v, _SC("connect(object, signal_name, callback_func)"));
     }
 
-    SQUserPointer ptr = nullptr;
-    sq_getuserpointer(v, 2, &ptr);
-    Object* obj = static_cast<Object*>(ptr);
+    Object* obj = nullptr;
+    uint64_t object_id = 0;
+
+    sq_pushstring(v, _SC("ptr"), -1);
+    if (SQ_SUCCEEDED(sq_get(v, 2))) {
+        SQUserPointer ptr = nullptr;
+        sq_getuserpointer(v, -1, &ptr);
+        obj = static_cast<Object*>(ptr);
+        sq_pop(v, 1);
+    }
+
+    if (!obj) {
+        sq_pushstring(v, _SC("id"), -1);
+        if (SQ_SUCCEEDED(sq_get(v, 2))) {
+            SQInteger id_raw = 0;
+            sq_getinteger(v, -1, &id_raw);
+            object_id = static_cast<uint64_t>(id_raw);
+            obj = ObjectDB::get_instance(object_id);
+            sq_pop(v, 1);
+        } else {
+            sq_pop(v, 1);
+        }
+    }
     
     if (!obj) {
         sq_pushbool(v, SQFalse);
@@ -1162,13 +1186,18 @@ SQInteger squirrel_connect(HSQUIRRELVM v) {
         return sq_throwerror(v, _SC("signal_name and callback_func must be strings"));
     }
 
-    ConnectionInfo conn;
-    conn.object_id = obj->get_instance_id();
-    conn.signal_name = StringName(signal_name);
-    conn.squirrel_func = String(callback_name);
-    g_connections.push_back(conn);
+    GodotSquirrel* self = static_cast<GodotSquirrel*>(sq_getforeignptr(v));
+    if (!self) {
+        return sq_throwerror(v, _SC("No GodotSquirrel instance"));
+    }
+
+    bool success = self->connect_signal(
+        obj->get_instance_id(),
+        StringName(signal_name),
+        String(callback_name)
+    );
     
-    sq_pushbool(v, SQTrue);
+    sq_pushbool(v, success ? SQTrue : SQFalse);
     return 1;
 }
 
@@ -1426,4 +1455,53 @@ void GodotSquirrel::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_script", "stringscript"),
         &GodotSquirrel::set_script
     );
+}
+
+
+bool GodotSquirrel::connect_signal(uint64_t object_id, const StringName& signal, const String& squirrel_func) {
+    Object* obj = ObjectDB::get_instance(object_id);
+    if (!obj) {
+        UtilityFunctions::printerr("Squirrel connect: Object not found for id ", object_id);
+        return false;
+    }
+
+    SquirrelSignalHandler* handler = memnew(SquirrelSignalHandler(vm, squirrel_func, object_id, signal));
+    Callable callback = Callable(handler);
+
+    SignalConnection conn;
+    conn.object_id = object_id;
+    conn.signal_name = signal;
+    conn.squirrel_func = squirrel_func;
+    conn.vm = vm;
+    conn.callable = callback;
+    conn.receiver_ptr = handler;
+
+    Error result = obj->connect(signal, callback, 1); // 1 = CONNECT_DEFERRED
+    
+    if (result == OK) {
+        std::lock_guard<std::mutex> lock(signal_mutex);
+        signal_connections.push_back(conn);
+        UtilityFunctions::print("Squirrel: Connected signal '", signal, "' to '", squirrel_func, "' on object ", object_id);
+    } else {
+        UtilityFunctions::printerr("Squirrel connect: Failed to connect signal '", signal, "' on object");
+        memdelete(handler);
+    }
+
+    return result == OK;
+}
+
+
+void GodotSquirrel::disconnect_all_signals() {
+    std::lock_guard<std::mutex> lock(signal_mutex);
+    
+    for (auto& conn : signal_connections) {
+        Object* obj = ObjectDB::get_instance(conn.object_id);
+        if (obj) {
+            obj->disconnect(conn.signal_name, conn.callable);
+        }
+        if (conn.receiver_ptr) {
+            memdelete(conn.receiver_ptr);
+        }
+    }
+    signal_connections.clear();
 }
