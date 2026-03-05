@@ -77,6 +77,9 @@ draw_rect(rect, color, boolfill)
 // draw_rect(rect, col, true)    
 // draw_circle(center, col, radius, [filled], [width])    
 // filled circle: draw_circle({x=400, y=300}, {r=1, g=0, b=0, a=1}, 50);    
+
+// for signals new command connect for example: connect(button_node, "pressed", "on_button_pressed")    
+    
      
 # example test.nut in project demo lets the sprite fly:    
 ```
@@ -158,7 +161,8 @@ start scons
 - draw_rect, draw_clear - theres no _draw-function cause the draw-commands work everywhere...    
 - now the standardlibraries of squirrel should work, for example: local result = math.sqrt(4)    
 - new command draw_circle, new examples timer.nut, button.nut
-- better errormessage with linenumber and error, better cleanup in destructor        
+- better errormessage with linenumber and error, better cleanup in destructor
+- signals work with new command connect, new example buttonsignal.nut    
   
   
   
