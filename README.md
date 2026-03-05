@@ -158,7 +158,7 @@ start scons
 - draw_rect, draw_clear - theres no _draw-function cause the draw-commands work everywhere...    
 - now the standardlibraries of squirrel should work, for example: local result = math.sqrt(4)    
 - new command draw_circle, new examples timer.nut, button.nut
-- better errormessage with linenumber and error    
+- better errormessage with linenumber and error, better cleanup in destructor        
   
   
   
